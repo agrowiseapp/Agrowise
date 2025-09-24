@@ -1,0 +1,237 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Σίμος Παπαδόπουλος",
+      "avatar": "https://randomuser.me/api/portraits/women/1.jpg",
+      "status": "online",
+      "lastMessage": "Sounds perfect. See you then!",
+      "lastMessageTime": "2023-04-10T13:05:00.000Z",
+      "unreadCount": 2,
+      "messages": [
+        {
+          "id": 1,
+          "text": "Hey, what's up?",
+          "time": "2023-05-08T10:30:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 2,
+          "text": "Not much, just working on some coding projects. How about you?",
+          "time": "2023-05-08T10:32:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 3,
+          "text": "Same here. Hey, do you want to grab a coffee later?",
+          "time": "2023-05-08T10:35:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 4,
+          "text": "Sure, that sounds good. What time?",
+          "time": "2023-05-08T10:40:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 5,
+          "text": "How about around 2pm?",
+          "time": "2023-05-08T10:42:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 6,
+          "text": "Sounds perfect. See you then!",
+          "time": "2023-05-08T10:45:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 50,
+          "text": "How about around 2pm?",
+          "time": "2023-05-08T10:42:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 60,
+          "text": "Sounds perfect. See you then!",
+          "time": "2023-05-08T10:45:00.000Z",
+          "isMine": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Αθηνά Μαρκοπούλου",
+      "avatar": "https://randomuser.me/api/portraits/men/1.jpg",
+      "status": "offline",
+      "lastMessage": "Same here. Hey, do you want to grab a coffee later?",
+      "lastMessageTime": "2023-04-10T13:05:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": 1,
+          "text": "Hey, what's up?",
+          "time": "2023-05-08T10:30:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 2,
+          "text": "Not much, just working on some coding projects. How about you?",
+          "time": "2023-05-08T10:32:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 3,
+          "text": "Same here. Hey, do you want to grab a coffee later?",
+          "time": "2023-05-08T10:35:00.000Z",
+          "isMine": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Γιώργος Νικολαΐδης",
+      "avatar": "https://randomuser.me/api/portraits/men/2.jpg",
+      "status": "online",
+      "lastMessage": "Sounds perfect! Looking forward to it.",
+      "lastMessageTime": "2023-05-08T14:28:00.000Z",
+      "unreadCount": 1,
+      "messages": [
+        {
+          "id": 7,
+          "text": "Hey, I just saw this new restaurant that opened up. Want to check it out for dinner tonight?",
+          "time": "2023-05-08T14:15:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 8,
+          "text": "Sounds great! What kind of food do they serve?",
+          "time": "2023-05-08T14:18:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 9,
+          "text": "It's a French restaurant. I heard their food is amazing.",
+          "time": "2023-05-08T14:20:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 10,
+          "text": "I love French cuisine! What time should we meet?",
+          "time": "2023-05-08T14:23:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 11,
+          "text": "How about 7 pm? I'll make a reservation for us.",
+          "time": "2023-05-08T14:25:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 12,
+          "text": "Sounds perfect! Looking forward to it.",
+          "time": "2023-05-08T14:28:00.000Z",
+          "isMine": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Ελένη Δημητρίου",
+      "avatar": "https://randomuser.me/api/portraits/men/3.jpg",
+      "status": "online",
+      "lastMessage": "Sounds good. See you then!",
+      "lastMessageTime": "2023-05-09T10:08:00.000Z",
+      "unreadCount": 1,
+      "messages": [
+        {
+          "id": 13,
+          "text": "Hey, are you free tomorrow afternoon? I wanted to catch up over coffee.",
+          "time": "2023-05-09T10:00:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 14,
+          "text": "I'm actually busy tomorrow, but I could do Tuesday if that works for you?",
+          "time": "2023-05-09T10:03:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 15,
+          "text": "Tuesday works for me. Let's meet at our usual spot at 2 pm?",
+          "time": "2023-05-09T10:05:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 16,
+          "text": "Sounds good. See you then!",
+          "time": "2023-05-09T10:08:00.000Z",
+          "isMine": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Νίκος Καραμπελιάς",
+      "avatar": "https://randomuser.me/api/portraits/women/2.jpg",
+      "status": "offline",
+      "lastMessage": "Yeah, I got a call back! I'm going in for an interview next week.",
+      "lastMessageTime": "2023-05-10T15:00:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": 17,
+          "text": "Hey, did you hear back from that job you applied to?",
+          "time": "2023-05-10T15:00:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 18,
+          "text": "Yeah, I got a call back! I'm going in for an interview next week.",
+          "time": "2023-05-10T15:02:00.000Z",
+          "isMine": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Αλεξάνδρα Παπαδοπούλου",
+      "status": "offline",
+      "lastMessage": "That's awesome, I've heard great things about that company. Let me know how it goes!",
+      "lastMessageTime": "2023-05-10T15:12:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": 17,
+          "text": "Hey, did you hear back from that job you applied to?",
+          "time": "2023-05-10T15:00:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 18,
+          "text": "Yeah, I got a call back! I'm going in for an interview next week.",
+          "time": "2023-05-10T15:02:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 19,
+          "text": "Congratulations! You're going to crush it. Which position is it for?",
+          "time": "2023-05-10T15:05:00.000Z",
+          "isMine": false
+        },
+        {
+          "id": 20,
+          "text": "Thanks! It's for a software engineer role at a startup downtown.",
+          "time": "2023-05-10T15:08:00.000Z",
+          "isMine": true
+        },
+        {
+          "id": 21,
+          "text": "That's awesome, I've heard great things about that company. Let me know how it goes!",
+          "time": "2023-05-10T15:12:00.000Z",
+          "isMine": false
+        }
+      ]
+    }
+  ]
+}

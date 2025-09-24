@@ -1,0 +1,11 @@
+[
+  { "id": 0, "url": "https://www.agronews.gr", "name": "Agro news" },
+  { "id": 1, "url": "https://www.agrotypos.gr", "name": "Agro Typos" },
+  { "id": 3, "url": "https://www.ypaithros.gr", "name": "Ypaithros" },
+  { "id": 4, "url": "https://www.agro24.gr", "name": "Agro 24" },
+  {
+    "id": 5,
+    "url": "https://www.dikaiologitika.gr/eidhseis/agrotika",
+    "name": "Agrotika"
+  }
+]
