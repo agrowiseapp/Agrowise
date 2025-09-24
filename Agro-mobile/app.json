@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "agrowise",
+    "slug": "agrowise",
+    "version": "1.1.4",
+    "scheme": "agrowise",
+    "orientation": "portrait",
+    "icon": "./assets/Logo/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/Logo/logo-color.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#628479"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "aggro.application",
+      "buildNumber": "10",
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "package": "aggro.application",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/Logo/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 31
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "aba9a469-c1ec-4d74-a839-0f3696305c1a"
+      }
+    },
+    "owner": "agrowiseapp",
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "targetSdkVersion": 35,
+            "newArchEnabled": true,
+            "ndkVersion": "26.1.10909125"
+          },
+          "ios": {
+            "useFrameworks": "static",
+            "deploymentTarget": "15.1",
+            "newArchEnabled": true
+          }
+        }
+      ]
+    ]
+  }
+}

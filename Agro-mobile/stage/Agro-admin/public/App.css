@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap");
+
+/* * {
+  font-family: "Source Sans Pro", sans-serif;
+} */
+main {
+  max-width: 100%;
+}
+
+.bubble-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.bubble-container.mine {
+  justify-content: flex-end;
+}
+
+.bubble-container.yours {
+  justify-content: flex-start;
+}
+
+.bubble {
+  border-radius: 10px;
+  padding: 10px 20px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 5px;
+}
+
+.bubblemine {
+  background-color: #dcf8c6;
+  border: "2px solid green";
+}
+
+.bubbleyours {
+  background-color: rgb(237, 235, 235);
+}
+
+.text {
+  margin: 0;
+}
+
+.time {
+  margin: 5px 0 0 0;
+  font-size: 12px;
+  color: #999;
+}
