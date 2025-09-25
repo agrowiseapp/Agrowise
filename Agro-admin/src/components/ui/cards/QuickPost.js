@@ -21,6 +21,7 @@ import {
   Card,
   CardMedia,
   LinearProgress,
+  CircularProgress,
 } from "@mui/material";
 import { AiFillEdit } from "react-icons/ai";
 import { MdDelete, MdAddPhotoAlternate } from "react-icons/md";
@@ -69,6 +70,7 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
   const [imagePreview, setimagePreview] = useState(null);
   const [selectedImage, setselectedImage] = useState(null);
   const [imageUploading, setimageUploading] = useState(false);
+  const [imageProcessing, setImageProcessing] = useState(false);
   const [imageError, setimageError] = useState("");
 
   //Errors
@@ -318,6 +320,9 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
         return;
       }
 
+      setImageProcessing(true);
+      setimageError("");
+
       try {
         // Compress the image
         const options = {
@@ -328,16 +333,17 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
 
         const compressedFile = await imageCompression(file, options);
         setselectedImage(compressedFile);
-        setimageError("");
 
         // Create preview
         const reader = new FileReader();
         reader.onload = (e) => {
           setimagePreview(e.target.result);
+          setImageProcessing(false);
         };
         reader.readAsDataURL(compressedFile);
       } catch (error) {
         setimageError("Η συμπίεση της εικόνας απέτυχε.");
+        setImageProcessing(false);
         console.error("Image compression error:", error);
       }
     }
@@ -502,7 +508,7 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                 </Box>
               )}
 
-              {imageUploading && (
+              {imageProcessing && (
                 <Box
                   sx={{
                     mt: 2,
@@ -515,12 +521,9 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                   }}
                 >
                   <Typography variant="body1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    📤 Ανέβασμα εικόνας...
+                    Το αρχείο ανεβαίνει...
                   </Typography>
                   <LinearProgress sx={{ mb: 1 }} />
-                  <Typography variant="caption" color="textSecondary">
-                    Παρακαλώ περιμένετε μέχρι να ολοκληρωθεί η αποστολή
-                  </Typography>
                 </Box>
               )}
             </Grid>
@@ -590,7 +593,7 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                 fullWidth
                 variant="contained"
                 onClick={handleOpenModal}
-                disabled={imageUploading}
+disabled={imageProcessing}
               >
                 Δημοσίευση
               </Button>
@@ -639,26 +642,20 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
             </Grid>
             <Grid item xs={6}>
               {loading ? (
-                <>
-                  <Button
-                    disabled
-                    style={{
-                      background: theme.palette.primary.dark,
-                      color: "white",
-                    }}
-                  >
-                    Αποστολή ...
-                  </Button>
-                </>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disabled
+                  startIcon={<CircularProgress size={20} color="inherit" />}
+                >
+                  Φορτώνει...
+                </Button>
               ) : (
                 <Button
                   fullWidth
-                  style={{
-                    background: theme.palette.primary.dark,
-                    color: "white",
-                  }}
+                  variant="contained"
                   onClick={handleSubmitArticle}
-                  disabled={imageUploading}
+                  disabled={imageProcessing}
                 >
                   Δημοσίευση
                 </Button>
