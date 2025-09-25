@@ -200,24 +200,28 @@ exports.posts_publish_post = (req, res, next) => {
     post
       .save()
       .then(async (result) => {
-        // COMMENTED OUT: Push notification sending
-        /*
+        // Send push notification to users with device tokens
         try {
-          // Send push notification to users with device tokens
           const users = await User.find({
-            deviceToken: { $exists: true },
+            deviceToken: { $exists: true, $ne: null, $ne: "" },
           }).select("deviceToken device");
-          
+
+          console.log(`📱 Found ${users.length} users with device tokens`);
+
           const notificationTitle = result.title;
           const notificationBody = "Μπείτε στην εφαρμογή για να διαβάσετε ολόκληρο το άρθρο!";
 
           // Send notifications with proper error handling
           let notificationErrors = 0;
+          let notificationsSent = 0;
+
           for (const user of users) {
             try {
               const deviceToken = user.deviceToken;
               const deviceType = user.device;
-              
+
+              console.log(`📤 Sending notification to device: ${deviceType} (token: ${deviceToken.substring(0, 20)}...)`);
+
               // Only send if we have valid data
               if (deviceToken && deviceType) {
                 await sendPushNotification(
@@ -226,6 +230,9 @@ exports.posts_publish_post = (req, res, next) => {
                   notificationBody,
                   deviceType
                 );
+                notificationsSent++;
+              } else {
+                console.log(`⚠️ Skipping user ${user._id}: missing token or device type`);
               }
             } catch (notificationError) {
               notificationErrors++;
@@ -235,15 +242,10 @@ exports.posts_publish_post = (req, res, next) => {
           }
 
           // Log notification summary
-          if (notificationErrors > 0) {
-            console.log(`⚠️  ${notificationErrors} out of ${users.length} notifications failed`);
-          } else {
-            console.log(`✅ All ${users.length} notifications sent successfully`);
-          }
+          console.log(`📊 Notification Summary: ${notificationsSent} sent, ${notificationErrors} failed out of ${users.length} total users`);
         } catch (notificationError) {
           console.log("❌ Notification system error:", notificationError.message);
         }
-        */
 
         // Create the response object
         const response = {

@@ -32,7 +32,7 @@ const groupChatRoutes = require("./api/routes/groupchat");
 const Atlas_connection_string = process.env.MONGO_CONNECTION_STRING;
 mongoose
   .connect(Atlas_connection_string, {
-    dbName: "giorgos_localhost",
+    dbName: process.env.MONGO_DB_NAME || "test",
     retryWrites: true,
     w: "majority",
   })

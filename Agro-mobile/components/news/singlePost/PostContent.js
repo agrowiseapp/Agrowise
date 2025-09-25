@@ -92,13 +92,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     position: "relative",
+    width: "100%",
   },
   imageLoader: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: 200,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f3f4f6",
@@ -107,9 +108,10 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: 220,
+    maxHeight: 300,
+    minHeight: 150,
     borderRadius: 12,
-    resizeMode: "cover",
+    resizeMode: "contain",
   },
   contentText: {
     fontSize: 16,

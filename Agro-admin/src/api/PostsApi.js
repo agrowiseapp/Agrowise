@@ -117,7 +117,9 @@ export async function getImagesNumber(apiUrl, token) {
 
 //Upload image to ImgBB
 export async function uploadImageApi(apiUrl, imageData, filename, token) {
-  let url = apiUrl + "/upload/image";
+  let url_request = apiUrl;
+  url_request = await returnUrl(url_request);
+  let url = url_request + UploadImage;
   return await fetch(url, {
     method: "POST",
     headers: {

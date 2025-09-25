@@ -466,14 +466,19 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                   )}
                 </Box>
               ) : (
-                <Card sx={{ maxWidth: 400 }}>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={imagePreview}
-                    alt="Preview"
-                    sx={{ objectFit: "cover" }}
-                  />
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                  <Card sx={{ maxWidth: 300, width: '100%' }}>
+                    <CardMedia
+                      component="img"
+                      image={imagePreview}
+                      alt="Preview"
+                      sx={{
+                        objectFit: "contain",
+                        maxHeight: 200,
+                        width: "100%",
+                        height: "auto"
+                      }}
+                    />
                   <Box
                     sx={{
                       p: 1,
@@ -493,14 +498,28 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                       <MdDelete />
                     </IconButton>
                   </Box>
-                </Card>
+                  </Card>
+                </Box>
               )}
 
               {imageUploading && (
-                <Box sx={{ mt: 1 }}>
-                  <LinearProgress />
-                  <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                    Ανέβασμα εικόνας...
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 2,
+                    backgroundColor: 'primary.light',
+                    textAlign: 'center'
+                  }}
+                >
+                  <Typography variant="body1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                    📤 Ανέβασμα εικόνας...
+                  </Typography>
+                  <LinearProgress sx={{ mb: 1 }} />
+                  <Typography variant="caption" color="textSecondary">
+                    Παρακαλώ περιμένετε μέχρι να ολοκληρωθεί η αποστολή
                   </Typography>
                 </Box>
               )}

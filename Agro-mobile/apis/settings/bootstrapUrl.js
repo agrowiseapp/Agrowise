@@ -2,7 +2,7 @@
 const BOOTSTRAP_URLS = {
   local: "http://192.168.2.7:3001",
   development: "http://192.168.2.4:3001",
-  production: "https://agrowise-application.onrender.com",
+  production: "https://agrowise-production.up.railway.app",
   staging: "https://agrowise-staging.onrender.com",
 };
 
