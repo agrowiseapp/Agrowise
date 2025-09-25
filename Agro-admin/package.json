@@ -2,6 +2,10 @@
   "name": "react-admin",
   "version": "0.2.3",
   "private": true,
+  "engines":{
+	  "node":"16.x",
+	  "npm":"8.x"
+  },
   "appSettings :": {
     "baseUrl": "http://localhost:3001",
     "notificationsTime": 30
