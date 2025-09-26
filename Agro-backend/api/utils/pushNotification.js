@@ -193,16 +193,52 @@ const getAccessToken = async () => {
   try {
     console.log("🔑 Firebase: Reading credentials from environment variables");
 
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (!privateKey) {
+      throw new Error("FIREBASE_PRIVATE_KEY environment variable is not set");
+    }
+
+    // Clean up the private key format
+    privateKey = privateKey
+      .replace(/\\n/g, '\n')  // Replace literal \n with actual newlines
+      .replace(/\\\\/g, '\\') // Replace double backslashes
+      .replace(/"/g, '')      // Remove any quotes
+      .replace(/'/g, '')      // Remove any single quotes
+      .trim();               // Remove leading/trailing whitespace
+
+    // If the key doesn't have proper line breaks, reconstruct it
+    if (privateKey.includes('-----BEGIN PRIVATE KEY----------END PRIVATE KEY-----')) {
+      // Key is all on one line, need to add proper line breaks
+      privateKey = privateKey
+        .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+        .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----')
+        // Add line breaks every 64 characters in the key content
+        .replace(/(.{64})/g, '$1\n')
+        // Clean up any double newlines
+        .replace(/\n\n/g, '\n');
+    }
+
+    // Ensure the key starts and ends correctly
+    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+      throw new Error("Private key missing BEGIN header");
+    }
+    if (!privateKey.includes('-----END PRIVATE KEY-----')) {
+      throw new Error("Private key missing END footer");
+    }
+
     const keys = {
       client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n').replace(/"/g, ''),
+      private_key: privateKey,
     };
 
-    if (!keys.client_email || !keys.private_key) {
-      throw new Error("Missing Firebase credentials in environment variables");
+    if (!keys.client_email) {
+      throw new Error("FIREBASE_CLIENT_EMAIL environment variable is not set");
     }
 
     console.log(`📧 Firebase: Using client email: ${keys.client_email}`);
+    console.log(`🔐 Firebase: Private key length: ${privateKey.length} characters`);
+    console.log(`🔐 Firebase: Private key starts with: ${privateKey.substring(0, 50)}...`);
 
     const client = new JWT({
       email: keys.client_email,
