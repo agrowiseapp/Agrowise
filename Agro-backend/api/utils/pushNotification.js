@@ -191,66 +191,147 @@ const generateAPNsToken = () => {
 
 const getAccessToken = async () => {
   try {
-    console.log("🔑 Firebase: Reading credentials from environment variables");
-
-    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-    if (!privateKey) {
-      throw new Error("FIREBASE_PRIVATE_KEY environment variable is not set");
+    console.log("🔑 Firebase: Starting authentication process");
+    console.log("🔍 Firebase: Checking environment variables...");
+    
+    // Debug environment variables
+    console.log(`🔍 Firebase: FIREBASE_CLIENT_EMAIL exists: ${!!process.env.FIREBASE_CLIENT_EMAIL}`);
+    console.log(`🔍 Firebase: FIREBASE_PRIVATE_KEY exists: ${!!process.env.FIREBASE_PRIVATE_KEY}`);
+    
+    if (process.env.FIREBASE_CLIENT_EMAIL) {
+      console.log(`🔍 Firebase: Client email value: ${process.env.FIREBASE_CLIENT_EMAIL}`);
+    }
+    
+    if (process.env.FIREBASE_PRIVATE_KEY) {
+      console.log(`🔍 Firebase: Private key length (raw): ${process.env.FIREBASE_PRIVATE_KEY.length} characters`);
+      console.log(`🔍 Firebase: Private key starts with: "${process.env.FIREBASE_PRIVATE_KEY.substring(0, 50)}..."`);
+      console.log(`🔍 Firebase: Private key ends with: "...${process.env.FIREBASE_PRIVATE_KEY.substring(process.env.FIREBASE_PRIVATE_KEY.length - 50)}"`);
+      console.log(`🔍 Firebase: Contains \\n sequences: ${process.env.FIREBASE_PRIVATE_KEY.includes('\\n')}`);
+      console.log(`🔍 Firebase: Contains actual newlines: ${process.env.FIREBASE_PRIVATE_KEY.includes('\n')}`);
+      console.log(`🔍 Firebase: Contains BEGIN PRIVATE KEY: ${process.env.FIREBASE_PRIVATE_KEY.includes('BEGIN PRIVATE KEY')}`);
     }
 
-    // Clean up the private key format
-    privateKey = privateKey
-      .replace(/\\n/g, '\n')  // Replace literal \n with actual newlines
-      .replace(/\\\\/g, '\\') // Replace double backslashes
-      .replace(/"/g, '')      // Remove any quotes
-      .replace(/'/g, '')      // Remove any single quotes
-      .trim();               // Remove leading/trailing whitespace
+    // Try to read from environment variables first (for Railway deployment)
+    if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+      console.log("📧 Firebase: Using environment variables");
+      
+      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+      console.log("🔧 Firebase: Starting private key processing...");
 
-    // If the key doesn't have proper line breaks, reconstruct it
-    if (privateKey.includes('-----BEGIN PRIVATE KEY----------END PRIVATE KEY-----')) {
-      // Key is all on one line, need to add proper line breaks
-      privateKey = privateKey
-        .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
-        .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----')
-        // Add line breaks every 64 characters in the key content
-        .replace(/(.{64})/g, '$1\n')
-        // Clean up any double newlines
-        .replace(/\n\n/g, '\n');
+      // Handle different possible formats of the private key in environment variables
+      if (privateKey) {
+        console.log("🔧 Firebase: Step 1 - Replacing literal \\n with actual newlines");
+        const beforeNewlines = privateKey.length;
+        privateKey = privateKey.replace(/\\n/g, '\n');
+        console.log(`🔧 Firebase: After newline replacement: ${beforeNewlines} → ${privateKey.length} characters`);
+        console.log(`🔧 Firebase: Now contains actual newlines: ${privateKey.includes('\n')}`);
+
+        // If the key doesn't start with BEGIN, it might be base64 encoded
+        if (!privateKey.includes('BEGIN PRIVATE KEY')) {
+          console.log("🔧 Firebase: Step 2 - Key doesn't contain BEGIN, trying base64 decode");
+          try {
+            const beforeBase64 = privateKey.length;
+            privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
+            console.log(`🔧 Firebase: Base64 decode successful: ${beforeBase64} → ${privateKey.length} characters`);
+            console.log(`🔧 Firebase: After base64 decode, starts with: "${privateKey.substring(0, 50)}..."`);
+          } catch (e) {
+            console.log("🔧 Firebase: Private key is not base64 encoded");
+            console.log(`🔧 Firebase: Base64 decode error: ${e.message}`);
+          }
+        } else {
+          console.log("🔧 Firebase: Step 2 - Key already contains BEGIN PRIVATE KEY, skipping base64 decode");
+        }
+
+        // Ensure proper formatting
+        if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
+          console.log("🔧 Firebase: Step 3 - Adding proper BEGIN/END headers");
+          const beforeHeaders = privateKey.length;
+          privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----\n`;
+          console.log(`🔧 Firebase: After adding headers: ${beforeHeaders} → ${privateKey.length} characters`);
+        } else {
+          console.log("🔧 Firebase: Step 3 - Key already has proper headers");
+        }
+
+        console.log(`🔧 Firebase: Final processed key length: ${privateKey.length} characters`);
+        console.log(`🔧 Firebase: Final key starts with: "${privateKey.substring(0, 50)}..."`);
+        console.log(`🔧 Firebase: Final key ends with: "...${privateKey.substring(privateKey.length - 50)}"`);
+      }
+
+      const keys = {
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        private_key: privateKey,
+      };
+
+      console.log(`📧 Firebase: Final client email: ${keys.client_email}`);
+      console.log(`🔐 Firebase: Final private key length: ${keys.private_key.length} characters`);
+
+      // Validate key format
+      const keyLines = keys.private_key.split('\n');
+      console.log(`🔍 Firebase: Key has ${keyLines.length} lines`);
+      console.log(`🔍 Firebase: First line: "${keyLines[0]}"`);
+      console.log(`🔍 Firebase: Last line: "${keyLines[keyLines.length - 1]}"`);
+      
+      // Check for common issues
+      if (!keys.private_key.includes('-----BEGIN PRIVATE KEY-----')) {
+        console.log("⚠️ Firebase: WARNING - Key missing BEGIN header");
+      }
+      if (!keys.private_key.includes('-----END PRIVATE KEY-----')) {
+        console.log("⚠️ Firebase: WARNING - Key missing END header");
+      }
+
+      console.log("🔧 Firebase: Creating JWT client...");
+      const client = new JWT({
+        email: keys.client_email,
+        key: keys.private_key,
+        scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+      });
+
+      console.log("🔧 Firebase: Attempting to authorize JWT client...");
+      const token = await client.authorize();
+      console.log("✅ Firebase: Authentication successful");
+      console.log(`🔑 Firebase: Access token length: ${token.access_token.length} characters`);
+      console.log(`🔑 Firebase: Token starts with: ${token.access_token.substring(0, 20)}...`);
+      return token.access_token;
+    } else {
+      // Fallback to service account file
+      console.log("📧 Firebase: Environment variables not found, using service account file");
+      const serviceAccountPath = path.join(__dirname, "key/firebase-service-key.json");
+      console.log(`📄 Firebase: Reading file: ${serviceAccountPath}`);
+      
+      const serviceAccount = require(serviceAccountPath);
+      console.log(`📧 Firebase: File client email: ${serviceAccount.client_email}`);
+      console.log(`🔐 Firebase: File private key length: ${serviceAccount.private_key.length} characters`);
+      console.log(`🔐 Firebase: File private key starts with: "${serviceAccount.private_key.substring(0, 50)}..."`);
+
+      console.log("🔧 Firebase: Creating JWT client from file...");
+      const client = new JWT({
+        email: serviceAccount.client_email,
+        key: serviceAccount.private_key,
+        scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+      });
+
+      console.log("🔧 Firebase: Attempting to authorize JWT client from file...");
+      const token = await client.authorize();
+      console.log("✅ Firebase: Authentication successful with file");
+      console.log(`🔑 Firebase: Access token length: ${token.access_token.length} characters`);
+      return token.access_token;
     }
-
-    // Ensure the key starts and ends correctly
-    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-      throw new Error("Private key missing BEGIN header");
-    }
-    if (!privateKey.includes('-----END PRIVATE KEY-----')) {
-      throw new Error("Private key missing END footer");
-    }
-
-    const keys = {
-      client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      private_key: privateKey,
-    };
-
-    if (!keys.client_email) {
-      throw new Error("FIREBASE_CLIENT_EMAIL environment variable is not set");
-    }
-
-    console.log(`📧 Firebase: Using client email: ${keys.client_email}`);
-    console.log(`🔐 Firebase: Private key length: ${privateKey.length} characters`);
-    console.log(`🔐 Firebase: Private key starts with: ${privateKey.substring(0, 50)}...`);
-
-    const client = new JWT({
-      email: keys.client_email,
-      key: keys.private_key,
-      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
-    });
-
-    const token = await client.authorize();
-    console.log("✅ Firebase: Authentication successful");
-    return token.access_token;
   } catch (error) {
     console.log(`❌ Firebase: Authentication failed - ${error.message}`);
+    console.log(`🔍 Firebase: Error name: ${error.name}`);
+    console.log(`🔍 Firebase: Error code: ${error.code}`);
+    console.log(`🔍 Firebase: Error stack:`, error.stack);
+    
+    // Additional debugging for JWT errors
+    if (error.message && error.message.includes('invalid_grant')) {
+      console.log("🔍 Firebase: This is a JWT signature validation error");
+      console.log("🔍 Firebase: Common causes:");
+      console.log("   - Private key formatting issues");
+      console.log("   - Mismatched client_email and private_key");
+      console.log("   - Clock synchronization issues");
+      console.log("   - Invalid service account permissions");
+    }
+    
     throw error;
   }
 };
