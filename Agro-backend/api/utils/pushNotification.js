@@ -196,16 +196,21 @@ const generateAPNsToken = () => {
 };
 
 const getAccessToken = async () => {
-  const keys = require("./key/service-account-key.json"); // Path to your service account key file
+  try {
+    const keys = require("./key/firebase-service-key.json");
 
-  const client = new JWT({
-    email: keys.client_email,
-    key: keys.private_key,
-    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
-  });
+    const client = new JWT({
+      email: keys.client_email,
+      key: keys.private_key,
+      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+    });
 
-  const token = await client.authorize();
-  return token.access_token;
+    const token = await client.authorize();
+    return token.access_token;
+  } catch (error) {
+    console.log("❌ Firebase authentication error:", error.message);
+    throw error;
+  }
 };
 
 module.exports = sendPushNotification;

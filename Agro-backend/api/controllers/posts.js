@@ -200,13 +200,11 @@ exports.posts_publish_post = (req, res, next) => {
     post
       .save()
       .then(async (result) => {
-        // Send push notification to users with device tokens
+        // Send push notifications to users with device tokens
         try {
           const users = await User.find({
             deviceToken: { $exists: true, $ne: null, $ne: "" },
           }).select("deviceToken device");
-
-          console.log(`📱 Found ${users.length} users with device tokens`);
 
           const notificationTitle = result.title;
           const notificationBody = "Μπείτε στην εφαρμογή για να διαβάσετε ολόκληρο το άρθρο!";
@@ -220,9 +218,6 @@ exports.posts_publish_post = (req, res, next) => {
               const deviceToken = user.deviceToken;
               const deviceType = user.device;
 
-              console.log(`📤 Sending notification to device: ${deviceType} (token: ${deviceToken.substring(0, 20)}...)`);
-
-              // Only send if we have valid data
               if (deviceToken && deviceType) {
                 await sendPushNotification(
                   deviceToken,
@@ -231,18 +226,12 @@ exports.posts_publish_post = (req, res, next) => {
                   deviceType
                 );
                 notificationsSent++;
-              } else {
-                console.log(`⚠️ Skipping user ${user._id}: missing token or device type`);
               }
             } catch (notificationError) {
               notificationErrors++;
-              console.log(`❌ Failed to send notification to user ${user._id}:`, notificationError.message);
               // Continue with other notifications even if one fails
             }
           }
-
-          // Log notification summary
-          console.log(`📊 Notification Summary: ${notificationsSent} sent, ${notificationErrors} failed out of ${users.length} total users`);
         } catch (notificationError) {
           console.log("❌ Notification system error:", notificationError.message);
         }
