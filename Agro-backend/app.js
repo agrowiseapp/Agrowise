@@ -2,6 +2,10 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+
+// Trust proxy for Railway deployment - must be before rate limiters
+app.set('trust proxy', true);
+
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");

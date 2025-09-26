@@ -195,7 +195,7 @@ const getAccessToken = async () => {
 
     const keys = {
       client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n').replace(/"/g, ''),
     };
 
     if (!keys.client_email || !keys.private_key) {

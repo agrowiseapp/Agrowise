@@ -402,7 +402,7 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                             }}
                             primary={
                               <Typography
-                                color="#fff"
+                                color={theme.palette.primary.dark}
                                 variant="h3"
                               >
                                 Γράψε ένα νέο Άρθρο
