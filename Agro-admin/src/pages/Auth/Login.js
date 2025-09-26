@@ -18,7 +18,6 @@ import { useDispatch } from "react-redux";
 import { redux_Navigation } from "../../redux/Navigation";
 import { redux_User } from "../../redux/User";
 import { loginUserApi, UserInfoApi } from "../../api/LoginApi";
-import Image from "../../assets/images/login.jpg"; // Import using relative path
 import MuiAlert from "@mui/material/Alert";
 import settings from "../../../package.json";
 import { styled, useTheme } from "@mui/material/styles";
@@ -45,7 +44,6 @@ function Login() {
 
   //3 Functions
   const handleSubmit = async (event) => {
-    console.log("Submit Pressed");
     setdisabledButton(true);
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -55,6 +53,7 @@ function Login() {
 
     if (username.length == 0 || pass.length == 0) {
       setformError(true);
+      setdisabledButton(false);
       return;
     }
     setformError(false);
@@ -68,11 +67,9 @@ function Login() {
 
       const response = await loginUserApi("apiUrl", bodyObject);
       const data = await response.json();
-      console.log("Login Response: ", data);
 
       if (data?.resultCode == 0) {
         let userInfo = await getUserInfoFunction(data.response.token);
-        console.log("Extracted User :", userInfo);
 
         if (userInfo.isAdmin) {
           setOpenAlert(true);
@@ -142,129 +139,266 @@ function Login() {
 
   return (
     <>
-      <Grid container component="main" sx={{ height: "100vh" }}>
+      <CssBaseline />
+      <Box sx={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
         <Grid
-          item
-          xs={false}
-          sm={4}
-          md={7}
-          sx={{
-            backgroundImage: `url(${Image})`,
-            backgroundRepeat: "no-repeat",
-            backgroundColor: (t) =>
-              t.palette.mode === "light"
-                ? t.palette.grey[50]
-                : t.palette.grey[900],
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-
-        <CssBaseline />
-        <Grid
-          item
-          xs={12}
-          sm={8}
-          md={5}
-          component={Paper}
-          elevation={6}
-          square
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
+          container
+          component="main"
+          sx={{ height: "100%", width: "100%", margin: 0, padding: 0 }}
         >
-          <Box
+          {/* Left side - Login Form */}
+          <Grid
+            item
+            xs={12}
+            md={4.8}
+            component={Paper}
+            elevation={0}
+            square
             sx={{
-              my: 5,
-              mx: 4,
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#fff",
+              padding: 4,
+              minHeight: "100vh",
+              maxHeight: "100vh",
+              overflow: "auto",
+              flex: { xs: 1, md: "0 0 40%" },
             }}
           >
-            <Logo />
-            <div>
-              <h3>AgroWise</h3>
-              <p>Καλώς ήρθατε στην σελίδα του Διαχειριστή</p>
-            </div>
             <Box
-              component="form"
-              noValidate
-              onSubmit={handleSubmit}
-              sx={{ mt: 1 }}
+              sx={{
+                mx: 4,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
             >
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Ον. Χρήστη"
-                name="email"
-                autoComplete="email"
-                autoFocus
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Κωδικός"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-                disabled={disabledButton}
+              <Logo />
+              <Typography variant="h4" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                Σύνδεση
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ mb: 4, color: "text.secondary", textAlign: "center" }}
               >
-                {disabledButton ? (
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <Typography style={{ marginBottom: 5 }}>
-                      Φορτώνει..
-                    </Typography>
+                Παρακαλώ εισάγετε τα στοιχεία σας για να συνδεθείτε
+              </Typography>
+              <Box
+                component="form"
+                noValidate
+                onSubmit={handleSubmit}
+                sx={{ width: "100%", maxWidth: 400 }}
+              >
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="email"
+                  label="Email"
+                  name="email"
+                  autoComplete="email"
+                  autoFocus
+                  sx={{ mb: 0 }}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Κωδικός"
+                  type="password"
+                  id="password"
+                  autoComplete="current-password"
+                  sx={{ mb: 2 }}
+                />
 
-                    <RaceBy size={80} lineWeight={5} speed={1.4} color="gray" />
-                  </div>
-                ) : (
-                  "Σύνδεση"
-                )}
-              </Button>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{
+                    mt: 2,
+                    mb: 2,
+                    py: 1.5,
+                    borderRadius: 2,
+                    backgroundColor: theme.palette.primary.main,
+                    "&:hover": {
+                      backgroundColor: theme.palette.primary.dark,
+                    },
+                  }}
+                  disabled={disabledButton}
+                >
+                  {disabledButton ? (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography>Φορτώνει..</Typography>
+                      <RaceBy
+                        size={20}
+                        lineWeight={5}
+                        speed={1.4}
+                        color="white"
+                      />
+                    </Box>
+                  ) : (
+                    "Σύνδεση"
+                  )}
+                </Button>
 
-              {formError && (
-                <Grid item xs={12} mb={1}>
-                  <Typography color={"red"}>
+                {formError && (
+                  <Typography
+                    color="error"
+                    variant="body2"
+                    sx={{ mt: 1, textAlign: "center" }}
+                  >
                     *Συμπληρώστε το ον. χρήστη και τον κωδικό σας!
                   </Typography>
-                </Grid>
-              )}
+                )}
 
-              {/* Register */}
-              <Grid mt={1}>
-                <Grid item>
-                  <Link href="#/Register" variant="body2">
-                    {"Δημιουργία νέου λογαριασμού"}
-                  </Link>
-                </Grid>
-                <Typography style={{ marginTop: 10 }}>
-                  <Link href="#/Policy" variant="body1">
-                    {"Όροι χρήσης και Πολιτική Απορρήτου"}
+                <Typography
+                  variant="body2"
+                  sx={{ mt: 2, textAlign: "center", color: "text.secondary" }}
+                >
+                  Δεν έχετε λογαριασμό?{" "}
+                  <Link
+                    href="#/Register"
+                    sx={{ color: theme.palette.primary.main }}
+                  >
+                    Δημιουργία νέου λογαριασμού
                   </Link>
                 </Typography>
-              </Grid>
 
-              <Grid item xs={12} style={{ textAlign: "right" }}>
-                <p> Έκδοση: {packageJson.version} </p>
-              </Grid>
+                <Typography
+                  variant="body2"
+                  sx={{ mt: 2, textAlign: "center", color: "text.secondary" }}
+                >
+                  <Link
+                    href="#/Policy"
+                    sx={{ color: theme.palette.primary.main }}
+                  >
+                    Όροι χρήσης και Πολιτική Απορρήτου
+                  </Link>
+                </Typography>
+
+                <Typography
+                  variant="caption"
+                  sx={{
+                    mt: 2,
+                    textAlign: "center",
+                    display: "block",
+                    color: "text.secondary",
+                  }}
+                >
+                  Έκδοση: {packageJson.version}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          </Grid>
+
+          {/* Right side - Green Background with Content */}
+          <Grid
+            item
+            xs={false}
+            md={7.2}
+            sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              display: { xs: "none", md: "flex" },
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              position: "relative",
+              color: "white",
+              padding: 6,
+              minHeight: "100vh",
+              maxHeight: "100vh",
+              overflow: "hidden",
+              flex: { md: "0 0 60%" },
+            }}
+          >
+            <Box
+              sx={{
+                textAlign: "center",
+                maxWidth: 600,
+                zIndex: 2,
+              }}
+            >
+              <Typography variant="h2" sx={{ mb: 2, fontWeight: 700 }}>
+                AgroWise
+              </Typography>
+              <Typography variant="h4" sx={{ mb: 4, fontWeight: 500 }}>
+                Καλώς ήρθες στην Σελίδα Διαχείρησης της εφαρμογής
+              </Typography>
+
+              <Typography
+                variant="body1"
+                sx={{ opacity: 0.8, fontStyle: "italic" }}
+              >
+                Όλα ξεκινάνε από εδώ.
+              </Typography>
+
+              {/* Decorative elements */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 2,
+                  mt: 4,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,0.8)",
+                  }}
+                />
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,0.4)",
+                  }}
+                />
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                  }}
+                />
+              </Box>
+            </Box>
+
+            {/* Background decorative circles */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: -50,
+                right: -50,
+                width: 200,
+                height: 200,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.1)",
+                zIndex: 1,
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: -100,
+                left: -100,
+                width: 300,
+                height: 300,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.05)",
+                zIndex: 1,
+              }}
+            />
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
 
       {/* Api Response Alert */}
       <Snackbar

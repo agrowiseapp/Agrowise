@@ -174,17 +174,6 @@ export default function PersistentDrawerLeft({ child }) {
     );
   };
 
-  const styles = {
-    active: {
-      background: theme.palette.primary.dark,
-      borderRadius: 10,
-      padding: 10,
-    },
-    classic: {
-      borderRadius: 10,
-      padding: 10,
-    },
-  };
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -209,7 +198,7 @@ export default function PersistentDrawerLeft({ child }) {
               edge="start"
               sx={{ mr: 2, ml: 2, ...(open && { display: "none" }) }}
             >
-              <MenuIcon style={{ color: theme.palette.primary.light }} />
+              <MenuIcon style={{ color: "#fff" }} />
             </IconButton>
             <Typography
               variant="h3"
@@ -284,36 +273,8 @@ export default function PersistentDrawerLeft({ child }) {
             flexDirection: "column",
           }}
         >
-          <div style={{ height: 20, color: "white" }}> {"1"}</div>
-          <ListItem
-            style={{
-              textAlign: "center",
-              margin: "auto",
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <Logo />
-          </ListItem>
-
-          {/* Username */}
-          <ListItem
-            style={{
-              textAlign: "center",
-              margin: "auto",
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <Typography
-              variant="h4"
-              style={{ color: theme.palette.primary.light }}
-            >
-              {User.User.firstName + " " + User.User.lastName}
-            </Typography>
-          </ListItem>
-
-          <Divider style={{ marginTop: 10, marginBottom: 10 }} />
+          {/* Navigation menu section */}
+          <div style={{ flex: 1, overflowY: "auto", paddingTop: 20 }}>
 
           {[
             "Κύρια Σελίδα",
@@ -325,39 +286,45 @@ export default function PersistentDrawerLeft({ child }) {
             index !== 3 ? (
               <ListItem key={text} onClick={() => navigateFunction(text)}>
                 <ListItemButton
-                  style={
-                    NavRedux.Page === text ? styles.active : styles.classic
-                  }
+                  sx={{
+                    borderRadius: "10px",
+                    padding: "10px",
+                    ...(NavRedux.Page === text && {
+                      backgroundColor: theme.palette.primary.dark,
+                      color: "white !important",
+                      "& .MuiListItemIcon-root": {
+                        color: "white !important",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: "white !important",
+                      },
+                    }),
+                  }}
                 >
                   <ListItemIcon>
                     {index === 0 && (
                       <AiFillHome
                         size={18}
-                        color={theme.palette.primary.light}
                       />
                     )}
                     {index === 1 && (
                       <AiFillEdit
                         size={18}
-                        color={theme.palette.primary.light}
                       />
                     )}
                     {index === 2 && (
                       <AiFillMessage
                         size={18}
-                        color={theme.palette.primary.light}
                       />
                     )}
                     {index === 4 && (
                       <AiFillFlag
                         size={18}
-                        color={theme.palette.primary.light}
                       />
                     )}
                   </ListItemIcon>
                   <ListItemText
                     primary={text}
-                    style={{ color: theme.palette.primary.light }}
                   />
                 </ListItemButton>
               </ListItem>
@@ -365,33 +332,43 @@ export default function PersistentDrawerLeft({ child }) {
               User?.User?.userLevel == 2 && (
                 <ListItem key={text} onClick={() => navigateFunction(text)}>
                   <ListItemButton
-                    style={
-                      NavRedux.Page === text ? styles.active : styles.classic
-                    }
+                    sx={{
+                      borderRadius: "10px",
+                      padding: "10px",
+                      ...(NavRedux.Page === text && {
+                        backgroundColor: theme.palette.primary.dark,
+                        color: "white !important",
+                        "& .MuiListItemIcon-root": {
+                          color: "white !important",
+                        },
+                        "& .MuiListItemText-primary": {
+                          color: "white !important",
+                        },
+                      }),
+                    }}
                   >
                     <ListItemIcon>
                       {index === 3 && (
                         <AiFillSetting
                           size={18}
-                          color={theme.palette.primary.light}
                         />
                       )}
                     </ListItemIcon>
                     <ListItemText
                       primary={text}
-                      style={{ color: theme.palette.primary.light }}
                     />
                   </ListItemButton>
                 </ListItem>
               )
             )
           )}
-          
+          </div>
+
           {/* Session Timer at the bottom */}
-          <div style={{ marginTop: "auto" }}>
-            <SessionTimer 
-              formattedTime={formattedTime} 
-              remainingTime={remainingTime} 
+          <div style={{ flexShrink: 0, marginTop: "auto" }}>
+            <SessionTimer
+              formattedTime={formattedTime}
+              remainingTime={remainingTime}
             />
           </div>
         </List>

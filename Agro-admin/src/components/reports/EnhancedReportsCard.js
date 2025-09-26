@@ -390,14 +390,14 @@ function EnhancedReportsCard() {
                     ...theme.typography.commonAvatar,
                     ...theme.typography.largeAvatar,
                     backgroundColor: theme.palette.primary.dark,
-                    color: theme.palette.primary.light,
+                    color: "#fff",
                   }}
                 >
                   <FlagIcon />
                 </Avatar>
               </Grid>
               <Grid item xs>
-                <Typography color={theme.palette.primary.light} variant="h4">
+                <Typography color="#fff" variant="h4">
                   Διαχείριση Αναφορών
                 </Typography>
                 <Typography variant="subtitle2" color="textSecondary">

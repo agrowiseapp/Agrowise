@@ -68,7 +68,7 @@ const SmallSideCard = ({ isLoading, text, icon }) => {
                       ...theme.typography.commonAvatar,
                       ...theme.typography.largeAvatar,
                       backgroundColor: theme.palette.primary.dark,
-                      color: theme.palette.primary.light,
+                      color: "#fff",
                     }}
                   >
                     {icon === "PeopleAltIcon" ? (
@@ -88,7 +88,7 @@ const SmallSideCard = ({ isLoading, text, icon }) => {
                   }}
                   primary={
                     <Typography
-                      color={theme.palette.primary.light}
+                      color="#fff"
                       variant="h4"
                     >
                       {text}

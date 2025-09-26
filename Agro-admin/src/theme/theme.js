@@ -186,19 +186,25 @@ const overrides = {
         paddingTop: "10px",
         paddingBottom: "10px",
         "&.Mui-selected": {
-          color: colors.secondaryDark,
-          backgroundColor: colors.primaryDark,
+          color: colors.menuSelected,
+          backgroundColor: colors.menuSelectedBack,
           "&:hover": {
             backgroundColor: colors.menuSelectedBack,
           },
           "& .MuiListItemIcon-root": {
             color: colors.menuSelected,
           },
+          "& .MuiListItemText-primary": {
+            color: colors.menuSelected,
+          },
         },
         "&:hover": {
-          backgroundColor: colors.primaryDark,
+          backgroundColor: colors.menuSelectedBack,
           color: colors.menuSelected,
           "& .MuiListItemIcon-root": {
+            color: colors.menuSelected,
+          },
+          "& .MuiListItemText-primary": {
             color: colors.menuSelected,
           },
         },
@@ -208,7 +214,7 @@ const overrides = {
   MuiListItemIcon: {
     styleOverrides: {
       root: {
-        color: colors.secondaryDark,
+        color: colors.primaryDark,
         minWidth: "36px",
       },
     },
@@ -216,7 +222,7 @@ const overrides = {
   MuiListItemText: {
     styleOverrides: {
       primary: {
-        color: colors.textDark,
+        color: colors.primaryMain,
         fontWeight: 500,
       },
     },

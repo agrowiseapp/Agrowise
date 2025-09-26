@@ -1,7 +1,6 @@
 const Use_Localhost_BaseUrl = false;
 
 export const returnUrl = (url) => {
-  //console.log("called");
   if (Use_Localhost_BaseUrl) {
     url = "http://localhost:3001";
     //url = "http://192.168.2.7:3001";

@@ -8,11 +8,11 @@ $paper: #ffffff;
 // $primary200: #8ecae6;
 // $primary800: #fb8500;
 
-$primaryLight: #305fab;
-$primaryMain: #4f65f1;
-$primaryDark: #3b82f680;
-$primary200: #8ecae6;
-$primary800: #fb8500;
+$primaryLight: #369858;
+$primaryMain: #277a44;
+$primaryDark: #226039;
+$primary200: #8ccfa5;
+$primary800: #1f4d31;
 
 // secondary
 $secondaryLight: #d8e6c1;
@@ -33,9 +33,9 @@ $errorMain: #f44336;
 $errorDark: #c62828;
 
 // orange
-$orangeLight: #fbe9e7;
-$orangeMain: #ffab91;
-$orangeDark: #d84315;
+$orangeLight: #fed7aa;
+$orangeMain: #f97316;
+$orangeDark: #ea580c;
 
 // warning
 $warningLight: #fff8e1;
@@ -51,6 +51,14 @@ $grey500: #697586;
 $grey600: #4b5565;
 $grey700: #364152;
 $grey900: #121926;
+
+// text
+$textDark: #121926;
+$heading: #364152;
+
+// menu
+$menuSelected: #ffffff;
+$menuSelectedBack: #277a44;
 
 // ==============================|| DARK THEME VARIANTS ||============================== //
 
@@ -131,6 +139,14 @@ $darkTextSecondary: #8492c4;
   grey600: $grey600;
   grey700: $grey700;
   grey900: $grey900;
+
+  // text
+  textDark: $textDark;
+  heading: $heading;
+
+  // menu
+  menuSelected: $menuSelected;
+  menuSelectedBack: $menuSelectedBack;
 
   // ==============================|| DARK THEME VARIANTS ||============================== //
 

@@ -108,7 +108,7 @@ function ReportsCard() {
                     ...theme.typography.commonAvatar,
                     ...theme.typography.largeAvatar,
                     backgroundColor: theme.palette.primary.dark,
-                    color: theme.palette.primary.light,
+                    color: "#fff",
                   }}
                 >
                   <GroupIcon />
@@ -119,7 +119,7 @@ function ReportsCard() {
                   py: 0,
                 }}
                 primary={
-                  <Typography color={theme.palette.primary.light} variant="h4">
+                  <Typography color="#fff" variant="h4">
                     Αναφορές
                   </Typography>
                 }

@@ -390,7 +390,7 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                                 ...theme.typography.commonAvatar,
                                 ...theme.typography.largeAvatar,
                                 backgroundColor: theme.palette.primary.dark,
-                                color: theme.palette.primary.light,
+                                color: "#fff",
                               }}
                             >
                               <AiFillEdit />
@@ -402,7 +402,7 @@ const QuickPost = ({ isLoading, setrefresh, refresh }) => {
                             }}
                             primary={
                               <Typography
-                                color={theme.palette.primary.light}
+                                color="#fff"
                                 variant="h3"
                               >
                                 Γράψε ένα νέο Άρθρο

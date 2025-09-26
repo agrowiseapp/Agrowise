@@ -172,7 +172,7 @@ const SettingsCard = ({ isLoading }) => {
                               ...theme.typography.commonAvatar,
                               ...theme.typography.largeAvatar,
                               backgroundColor: theme.palette.primary.dark,
-                              color: theme.palette.primary.light,
+                              color: "#fff",
                             }}
                           >
                             <BsGlobeAmericas />
@@ -184,7 +184,7 @@ const SettingsCard = ({ isLoading }) => {
                           }}
                           primary={
                             <Typography
-                              color={theme.palette.primary.light}
+                              color="#fff"
                               variant="h4"
                             >
                               Ρυθμίσεις
