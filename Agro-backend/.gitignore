@@ -79,6 +79,11 @@ web_modules/
 .env.production.local
 .env.local
 
+# Firebase service account keys (sensitive credentials)
+api/utils/key/firebase-service-key.json
+api/utils/key/service-account-key.json
+api/utils/key/*.json
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
