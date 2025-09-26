@@ -109,13 +109,10 @@ const sendPushNotification = async (deviceToken, title, body, deviceType) => {
     };
 
     try {
-      // Send the push notification request for Android
-      const response = await axios.post(fcmUrl, requestBody, { headers });
-
-      // Handle the response
-      console.log("Push notification sent for Android:", response.data);
+      await axios.post(fcmUrl, requestBody, { headers });
+      console.log("📱 Push: Android notification sent successfully");
     } catch (error) {
-      console.log("Error sending push notification for Android:", error);
+      console.log(`❌ Push: Android notification failed - ${error.message}`);
     }
   } else if (deviceType === 2) {
     // iOS device - Use APNs
@@ -149,13 +146,10 @@ const sendPushNotification = async (deviceToken, title, body, deviceType) => {
     );
 
     try {
-      // Send the push notification request for iOS
       request.end();
-
-      // Handle the response (you may need to listen for specific events in http2)
-      console.log("Push notification sent for iOS");
+      console.log("🍎 Push: iOS notification sent successfully");
     } catch (error) {
-      console.log("Error sending push notification for iOS:", error);
+      console.log(`❌ Push: iOS notification failed - ${error.message}`);
     }
   } else {
     console.log("Invalid device type:", deviceType);
@@ -197,7 +191,18 @@ const generateAPNsToken = () => {
 
 const getAccessToken = async () => {
   try {
-    const keys = require("./key/firebase-service-key.json");
+    console.log("🔑 Firebase: Reading credentials from environment variables");
+
+    const keys = {
+      client_email: process.env.FIREBASE_CLIENT_EMAIL,
+      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
+
+    if (!keys.client_email || !keys.private_key) {
+      throw new Error("Missing Firebase credentials in environment variables");
+    }
+
+    console.log(`📧 Firebase: Using client email: ${keys.client_email}`);
 
     const client = new JWT({
       email: keys.client_email,
@@ -206,9 +211,10 @@ const getAccessToken = async () => {
     });
 
     const token = await client.authorize();
+    console.log("✅ Firebase: Authentication successful");
     return token.access_token;
   } catch (error) {
-    console.log("❌ Firebase authentication error:", error.message);
+    console.log(`❌ Firebase: Authentication failed - ${error.message}`);
     throw error;
   }
 };

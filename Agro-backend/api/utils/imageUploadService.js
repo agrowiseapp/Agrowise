@@ -18,17 +18,9 @@ class ImageUploadService {
         throw new Error("ImgBB API key not configured");
       }
       const form = new FormData();
-      console.log("[ImgBB] Using API key:", this.apiKey);
-      console.log("[ImgBB] Upload URL:", this.uploadUrl);
-      console.log(
-        "[ImgBB] base64 first 100 chars:",
-        imageBase64.substring(0, 100)
-      );
       form.append("image", imageBase64);
 
-      // Log form-data headers
       const headers = form.getHeaders();
-      console.log("[ImgBB] Form headers:", headers);
 
       const response = await axios.post(
         this.uploadUrl + `?key=${this.apiKey}`,
@@ -36,10 +28,8 @@ class ImageUploadService {
         { headers }
       );
 
-      console.log("[ImgBB] Response status:", response.status);
-      console.log("[ImgBB] Response data:", response.data);
-
       if (response.data.success) {
+        console.log("✅ ImgBB: Image uploaded successfully");
         return {
           success: true,
           url: response.data.data.url,
@@ -50,7 +40,7 @@ class ImageUploadService {
         throw new Error(response.data.error?.message || "Upload failed");
       }
     } catch (error) {
-      console.error("ImgBB upload error:", error);
+      console.log("❌ ImgBB: Upload failed -", error.message);
       return {
         success: false,
         error: error.message,
@@ -68,10 +58,6 @@ class ImageUploadService {
         /^data:image\/[a-zA-Z0-9+]+;base64,/,
         ""
       );
-      console.log(
-        "[ImgBB] After strip, first 100 chars:",
-        base64Image.substring(0, 100)
-      );
       if (
         !base64Image ||
         base64Image.length === 0 ||
@@ -82,7 +68,6 @@ class ImageUploadService {
       // Do NOT convert to Buffer, just send the string!
       return await this.uploadImage(base64Image, filename);
     } catch (error) {
-      console.error("Base64 upload error:", error);
       return {
         success: false,
         error: error.message,

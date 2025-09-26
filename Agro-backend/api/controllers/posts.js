@@ -232,6 +232,11 @@ exports.posts_publish_post = (req, res, next) => {
               // Continue with other notifications even if one fails
             }
           }
+
+          console.log(`📱 Push: Sent ${notificationsSent} notifications successfully`);
+          if (notificationErrors > 0) {
+            console.log(`❌ Push: Failed to send ${notificationErrors} notifications`);
+          }
         } catch (notificationError) {
           console.log("❌ Notification system error:", notificationError.message);
         }
