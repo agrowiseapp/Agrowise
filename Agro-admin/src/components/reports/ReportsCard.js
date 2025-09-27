@@ -119,7 +119,7 @@ function ReportsCard() {
                   py: 0,
                 }}
                 primary={
-                  <Typography color="#fff" variant="h4">
+                  <Typography color={theme.palette.primary.dark} variant="h4">
                     Αναφορές
                   </Typography>
                 }

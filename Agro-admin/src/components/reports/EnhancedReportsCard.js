@@ -397,7 +397,7 @@ function EnhancedReportsCard() {
                 </Avatar>
               </Grid>
               <Grid item xs>
-                <Typography color="#fff" variant="h4">
+                <Typography color={theme.palette.primary.dark} variant="h4">
                   Διαχείριση Αναφορών
                 </Typography>
                 <Typography variant="subtitle2" color="textSecondary">

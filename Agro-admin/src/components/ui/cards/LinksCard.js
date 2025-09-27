@@ -176,7 +176,7 @@ const LinksCard = ({ isLoading }) => {
                       }}
                       primary={
                         <Typography
-                          color="#fff"
+                          color={theme.palette.primary.dark}
                           variant="h4"
                         >
                           Ενημέρωση
