@@ -22,6 +22,9 @@ router.post("/", checkAuth, GroupChatController.send_message);
 // Body: { messageId, reportedUserId, reportedUsername, reason, reportedText, reporterUserId, reporterUsername }
 router.post("/report", checkAuth, GroupChatController.report_message);
 
+// [GET] - Get count of pending reported messages (must be before /reports route)
+router.get("/reports/count", checkAuth, GroupChatController.get_pending_reports_count);
+
 // [GET] - Get all reported messages for admin review
 router.get("/reports", checkAuth, GroupChatController.get_reported_messages);
 

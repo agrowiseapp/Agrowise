@@ -21,14 +21,34 @@ async function verifyGoogleToken(idToken) {
     const payload = ticket.getPayload();
     console.log("Google token verified successfully");
 
+    // Extract name parts with robust fallbacks
+    // Priority: given_name -> name -> email username -> "User"
+    let firstName = payload.given_name || payload.name;
+
+    if (!firstName || firstName.trim() === "") {
+      // If still no firstName, extract from email (part before @)
+      firstName = payload.email ? payload.email.split("@")[0] : "User";
+    }
+
+    // For lastName: family_name -> given_name -> email username -> firstName
+    let lastName = payload.family_name;
+
+    if (!lastName || lastName.trim() === "") {
+      lastName = payload.given_name || firstName;
+    }
+
+    // Final safety check - ensure neither is empty
+    firstName = firstName && firstName.trim() !== "" ? firstName.trim() : "User";
+    lastName = lastName && lastName.trim() !== "" ? lastName.trim() : "User";
+
     return {
       success: true,
       userInfo: {
         googleId: payload.sub,
         email: payload.email,
-        firstName: payload.given_name,
-        lastName: payload.family_name,
-        profilePicture: payload.picture,
+        firstName: firstName,
+        lastName: lastName,
+        profilePicture: payload.picture || "",
         emailVerified: payload.email_verified,
       },
     };

@@ -17,10 +17,12 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Badge from "@mui/material/Badge";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { redux_Navigation, redux_resetNavigation } from "../redux/Navigation";
 import { redux_resetUser } from "../redux/User";
+import { redux_setPendingReportsCount } from "../redux/Reports";
 import {
   AiFillHome,
   AiFillMessage,
@@ -33,6 +35,7 @@ import Logo from "../components/logo/Logo";
 import ProfileSection from "./ProfileSection";
 import useInactivityTimer from "../hooks/useInactivityTimer";
 import SessionTimer from "../components/timer/SessionTimer";
+import { getPendingReportsCountApi } from "../api/GroupChatApi";
 
 const drawerWidth = 280;
 
@@ -86,6 +89,7 @@ export default function PersistentDrawerLeft({ child }) {
   const theme = useTheme();
   const User = useSelector((state) => state.User.value);
   const NavRedux = useSelector((state) => state.Navigation.value);
+  const Reports = useSelector((state) => state.Reports.value);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -101,7 +105,25 @@ export default function PersistentDrawerLeft({ child }) {
 
   const { remainingTime, formattedTime } = useInactivityTimer(600000, handleLogout); // 10 minutes
 
+  // 2) useEffects - Fetch pending reports count on mount
+  useEffect(() => {
+    fetchPendingReportsCount();
+  }, []);
+
   // 3) Functions
+  const fetchPendingReportsCount = async () => {
+    try {
+      const response = await getPendingReportsCountApi("apiUrl", User.Token);
+      const data = await response.json();
+
+      if (data.resultCode === 0) {
+        dispatch(redux_setPendingReportsCount(data.response.count));
+      }
+    } catch (error) {
+      console.error("Error fetching pending reports count:", error);
+    }
+  };
+
   const navigateFunction = (page) => {
     switch (page) {
       case "Κύρια Σελίδα":
@@ -318,9 +340,20 @@ export default function PersistentDrawerLeft({ child }) {
                       />
                     )}
                     {index === 4 && (
-                      <AiFillFlag
-                        size={18}
-                      />
+                      <Badge
+                        badgeContent={Reports.pendingReportsCount}
+                        color="error"
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            backgroundColor: '#f44336',
+                            color: 'white',
+                          }
+                        }}
+                      >
+                        <AiFillFlag
+                          size={18}
+                        />
+                      </Badge>
                     )}
                   </ListItemIcon>
                   <ListItemText

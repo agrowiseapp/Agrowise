@@ -5,11 +5,13 @@ import { persistReducer } from "redux-persist";
 import thunk from "redux-thunk";
 import NavigationReducer from "../Navigation";
 import UserReducer from "../User";
+import ReportsReducer from "../Reports";
 
 const reducers = combineReducers(
   {
     Navigation: NavigationReducer,
     User: UserReducer,
+    Reports: ReportsReducer,
   },
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );

@@ -509,3 +509,32 @@ exports.admin_delete_message = async (req, res, next) => {
     return res.status(500).json(response);
   }
 };
+
+// Get count of pending reported messages
+exports.get_pending_reports_count = async (req, res, next) => {
+  try {
+    console.log('📊 Fetching pending reports count...');
+
+    // Count reports with status "pending"
+    const pendingCount = await MessageReport.countDocuments({
+      status: "pending"
+    });
+
+    console.log(`✅ Pending reports count: ${pendingCount}`);
+
+    const response = createResponse(
+      "success",
+      0,
+      "Pending reports count retrieved successfully",
+      {
+        count: pendingCount,
+      }
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("❌ Error fetching pending reports count:", error);
+    const response = createResponse("error", 1, error.message);
+    return res.status(500).json(response);
+  }
+};

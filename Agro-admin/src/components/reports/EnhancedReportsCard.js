@@ -37,13 +37,15 @@ import {
 import MainCard from "../ui/cards/MainCard";
 import SkeletonPopularCard from "../ui/skeletons/LinksCard";
 import settings from "../../../package.json";
-import { useSelector } from "react-redux";
-import { 
-  getReportComments, 
+import { useSelector, useDispatch } from "react-redux";
+import { redux_setPendingReportsCount } from "../../redux/Reports";
+import {
+  getReportComments,
   getGroupChatReports,
   updateGroupChatReportStatus,
-  adminDeleteGroupChatMessage 
+  adminDeleteGroupChatMessage
 } from "../../api/CommentsApi";
+import { getPendingReportsCountApi } from "../../api/GroupChatApi";
 
 function EnhancedReportsCard() {
   // 1) Data
@@ -60,6 +62,7 @@ function EnhancedReportsCard() {
 
   const theme = useTheme();
   const User = useSelector((state) => state.User.value);
+  const dispatch = useDispatch();
 
   // 2) useEffects
   useEffect(() => {
@@ -67,6 +70,21 @@ function EnhancedReportsCard() {
   }, []);
 
   // 3) Functions
+  const refreshPendingReportsCount = async () => {
+    try {
+      const url = settings["appSettings :"].baseUrl;
+      const token = User.Token;
+      const response = await getPendingReportsCountApi(url, token);
+      const data = await response.json();
+
+      if (data.resultCode === 0) {
+        dispatch(redux_setPendingReportsCount(data.response.count));
+      }
+    } catch (error) {
+      console.error("Error refreshing pending reports count:", error);
+    }
+  };
+
   const loadAllReports = async () => {
     setLoading(true);
     setError("");
@@ -151,6 +169,7 @@ function EnhancedReportsCard() {
       if (data?.resultCode === 0) {
         setSuccess(`Report status updated to ${getStatusText(newStatus)}`);
         await loadAllReports(); // Refresh the list
+        await refreshPendingReportsCount(); // Update the badge count
       } else {
         setError(data?.message || "Failed to update report status");
       }
@@ -200,6 +219,7 @@ function EnhancedReportsCard() {
         setSelectedReport(null);
         setDeleteReason("");
         await loadAllReports(); // Refresh the list
+        await refreshPendingReportsCount(); // Update the badge count
       } else {
         setError(data?.message || "Failed to delete message");
       }
@@ -397,7 +417,7 @@ function EnhancedReportsCard() {
                 </Avatar>
               </Grid>
               <Grid item xs>
-                <Typography color={theme.palette.primary.dark} variant="h4">
+                <Typography color="#fff" variant="h4">
                   Διαχείριση Αναφορών
                 </Typography>
                 <Typography variant="subtitle2" color="textSecondary">
