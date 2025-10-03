@@ -16,6 +16,7 @@ exports.posts_get_all = (req, res, next) => {
   Post.find()
     .select("author title publishedAt text _id imageUrl")
     .sort({ publishedAt: -1 })
+    .limit(50)
     .exec()
     .then((docs) => {
       const postIds = docs.map((post) => post._id);
@@ -202,36 +203,23 @@ exports.posts_publish_post = (req, res, next) => {
       .then(async (result) => {
         // Send push notifications to users with device tokens
         try {
-          console.log("🚀 Post: Starting push notification process...");
           const users = await User.find({
             deviceToken: { $exists: true, $ne: null, $ne: "" },
           }).select("deviceToken device");
 
-          console.log(`👥 Post: Found ${users.length} users with device tokens`);
-          
           const notificationTitle = result.title;
           const notificationBody = "Μπείτε στην εφαρμογή για να διαβάσετε ολόκληρο το άρθρο!";
-
-          console.log(`📝 Post: Notification title: "${notificationTitle}"`);
-          console.log(`📝 Post: Notification body: "${notificationBody}"`);
 
           // Send notifications with proper error handling
           let notificationErrors = 0;
           let notificationsSent = 0;
 
-          for (let i = 0; i < users.length; i++) {
-            const user = users[i];
-            console.log(`📱 Post: Processing user ${i + 1}/${users.length}`);
-            
+          for (const user of users) {
             try {
               const deviceToken = user.deviceToken;
               const deviceType = user.device;
 
-              console.log(`📱 Post: User ${i + 1} - Device token: ${deviceToken ? deviceToken.substring(0, 20) + '...' : 'null'}`);
-              console.log(`📱 Post: User ${i + 1} - Device type: ${deviceType}`);
-
               if (deviceToken && deviceType) {
-                console.log(`📱 Post: Sending notification to user ${i + 1}...`);
                 await sendPushNotification(
                   deviceToken,
                   notificationTitle,
@@ -239,12 +227,8 @@ exports.posts_publish_post = (req, res, next) => {
                   deviceType
                 );
                 notificationsSent++;
-                console.log(`✅ Post: Notification sent successfully to user ${i + 1}`);
-              } else {
-                console.log(`⚠️ Post: Skipping user ${i + 1} - Missing token or device type`);
               }
             } catch (notificationError) {
-              console.log(`❌ Post: Failed to send notification to user ${i + 1}: ${notificationError.message}`);
               notificationErrors++;
               // Continue with other notifications even if one fails
             }
@@ -256,7 +240,6 @@ exports.posts_publish_post = (req, res, next) => {
           }
         } catch (notificationError) {
           console.log("❌ Notification system error:", notificationError.message);
-          console.log("❌ Notification error stack:", notificationError.stack);
         }
 
         // Create the response object
