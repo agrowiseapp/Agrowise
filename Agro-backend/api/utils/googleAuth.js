@@ -4,7 +4,7 @@ require("dotenv").config();
 
 // 2) Google OAuth Configuration
 const GOOGLE_CLIENT_ID =
-  "990770526562-ilsmjhrc84o6c624qnvr502dmouv9ukr.apps.googleusercontent.com";
+  "990770526562-pflqupb4cdn44to3mmsu5ab4fvbjabb9.apps.googleusercontent.com";
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // 3) Verify Google ID Token
