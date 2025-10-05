@@ -6,12 +6,14 @@ import thunk from "redux-thunk";
 import NavigationReducer from "../Navigation";
 import UserReducer from "../User";
 import ReportsReducer from "../Reports";
+import GroupChatReducer from "../GroupChat";
 
 const reducers = combineReducers(
   {
     Navigation: NavigationReducer,
     User: UserReducer,
     Reports: ReportsReducer,
+    GroupChat: GroupChatReducer,
   },
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );

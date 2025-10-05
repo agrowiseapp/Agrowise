@@ -2,6 +2,7 @@ import { CssBaseline, StyledEngineProvider } from "@mui/material";
 import Dashboard from "./pages/Main/Dashboard";
 import News from "./pages/Main/News";
 import Messages from "./pages/Main/Messages";
+import GroupChat from "./pages/Main/GroupChat";
 import Login from "./pages/Auth/Login";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./theme/theme";
@@ -40,6 +41,11 @@ function App() {
       <Route
         path="/Messages"
         element={<Messages />}
+        errorElement={<ErrorBoundary />}
+      />
+      <Route
+        path="/GroupChat"
+        element={<GroupChat />}
         errorElement={<ErrorBoundary />}
       />
       <Route

@@ -172,6 +172,34 @@ exports.send_message = async (req, res, next) => {
       console.error('Background cleanup failed:', error);
     });
 
+    // Send push notifications asynchronously (non-blocking)
+    const sendNotifications = async () => {
+      try {
+        const { sendGroupChatNotifications } = require("../utils/groupChatNotifications");
+        const result = await sendGroupChatNotifications(
+          savedMessage.message,
+          savedMessage._id,
+          savedMessage.userId,
+          savedMessage.authorName
+        );
+
+        if (result.skipped === 'rate_limited') {
+          console.log('⏭️ Group Chat: Notifications skipped due to rate limiting');
+        } else if (result.skipped === 'disabled') {
+          console.log('⚠️ Group Chat: Notifications disabled');
+        } else if (result.error) {
+          console.error(`❌ Group Chat: Notification error - ${result.error}`);
+        } else {
+          console.log(`✅ Group Chat: ${result.sent} notifications sent successfully`);
+        }
+      } catch (error) {
+        console.error("❌ Group Chat: Unexpected notification error:", error.message);
+      }
+    };
+
+    // Fire and forget - don't block the response
+    sendNotifications();
+
     // Populate user info for response
     await savedMessage.populate("userId", "firstName lastName");
 

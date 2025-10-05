@@ -81,7 +81,7 @@ app.use("/message", messageRoutes);
 app.use("/resetPassword", passwordResetLimiter, passwordRoutes); // Apply password reset rate limiting
 app.use("/upload", uploadLimiter, uploadRoutes); // Apply upload rate limiting
 app.use("/api/config", configRoutes); // Config endpoint
-app.use("/groupchat", commentLimiter, groupChatRoutes); // Apply comment rate limiting for group chat
+app.use("/groupchat", groupChatRoutes); // No rate limiting for group chat
 
 // Handle Errors
 app.use((req, res, next) => {

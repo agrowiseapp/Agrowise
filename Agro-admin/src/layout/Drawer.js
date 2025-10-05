@@ -30,6 +30,7 @@ import {
   AiOutlineClose,
   AiFillSetting,
   AiFillFlag,
+  AiFillWechat,
 } from "react-icons/ai";
 import Logo from "../components/logo/Logo";
 import ProfileSection from "./ProfileSection";
@@ -150,6 +151,15 @@ export default function PersistentDrawerLeft({ child }) {
         dispatch(
           redux_Navigation({
             Page: "Επικοινωνία",
+          })
+        );
+
+        break;
+      case "Group Chat":
+        navigate("/GroupChat");
+        dispatch(
+          redux_Navigation({
+            Page: "Group Chat",
           })
         );
 
@@ -302,10 +312,11 @@ export default function PersistentDrawerLeft({ child }) {
             "Κύρια Σελίδα",
             "Ενημέρωση",
             "Επικοινωνία",
+            "Group Chat",
             "Ρυθμίσεις",
             "Αναφορές",
           ].map((text, index) =>
-            index !== 3 ? (
+            index !== 4 ? (
               <ListItem key={text} onClick={() => navigateFunction(text)}>
                 <ListItemButton
                   sx={{
@@ -339,7 +350,12 @@ export default function PersistentDrawerLeft({ child }) {
                         size={18}
                       />
                     )}
-                    {index === 4 && (
+                    {index === 3 && (
+                      <AiFillWechat
+                        size={18}
+                      />
+                    )}
+                    {index === 5 && (
                       <Badge
                         badgeContent={Reports.pendingReportsCount}
                         color="error"
@@ -381,7 +397,7 @@ export default function PersistentDrawerLeft({ child }) {
                     }}
                   >
                     <ListItemIcon>
-                      {index === 3 && (
+                      {index === 4 && (
                         <AiFillSetting
                           size={18}
                         />
