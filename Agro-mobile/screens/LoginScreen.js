@@ -89,7 +89,7 @@ const LoginScreen = () => {
   const [policy, setpolicy] = useState(null);
   const [checkedRememberMe, setCheckedRememberMe] = React.useState(false);
   const toggleCheckbox = () => setCheckedRememberMe(!checkedRememberMe);
-  const { isProMember } = useRevenueCat();
+  const { isProMember, isLoading: revenueCatLoading, error: revenueCatError } = useRevenueCat();
   const { signIn: googleSignIn, loading: googleLoading } = useGoogleAuth();
   const { signIn: googleSignInOfficial, loading: googleLoadingOfficial } =
     useGoogleAuthOfficial();
@@ -151,6 +151,73 @@ const LoginScreen = () => {
     }
   };
 
+  // Helper function to wait for RevenueCat to finish loading
+  const waitForRevenueCat = async (maxWaitTime = 4000) => {
+    const startTime = Date.now();
+
+    console.log("⏳ Waiting for RevenueCat to finish loading...");
+
+    // Poll every 100ms until RevenueCat is done loading or timeout
+    while (revenueCatLoading && (Date.now() - startTime) < maxWaitTime) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    const waitTime = Date.now() - startTime;
+
+    if (revenueCatLoading) {
+      console.warn(`⚠️ RevenueCat still loading after ${waitTime}ms - proceeding anyway`);
+      return false; // Timeout reached
+    } else {
+      console.log(`✅ RevenueCat finished loading in ${waitTime}ms`);
+      return true; // Successfully loaded
+    }
+  };
+
+  // Helper function to check subscription and navigate
+  const checkSubscriptionAndNavigate = async () => {
+    console.log("🔍 Checking subscription status...");
+    console.log("📊 isProMember:", isProMember);
+    console.log("📊 RevenueCat Loading:", revenueCatLoading);
+    console.log("📊 RevenueCat Error:", revenueCatError);
+
+    // Wait for RevenueCat to finish loading
+    await waitForRevenueCat();
+
+    if (isProMember) {
+      console.log("✅ User has active subscription - allowing access");
+      AsyncStorage.setItem("ProMembership", "true");
+      navigation.navigate("Main");
+      return true;
+    } else {
+      console.log("❌ User has no active subscription");
+      AsyncStorage.removeItem("ProMembership");
+      AsyncStorage.removeItem("userToken");
+      AsyncStorage.removeItem("userInfo");
+
+      Alert.alert(
+        "Απαιτείται Συνδρομή",
+        "Για να συνδεθείτε πρέπει να έχετε ενεργή συνδρομή. Μπορείτε να κάνετε εγγραφή για νέα συνδρομή ή να χρησιμοποιήσετε τη δοκιμαστική έκδοση.",
+        [
+          {
+            text: "Δοκιμαστική Χρήση",
+            style: "cancel",
+            onPress: () => {
+              handleTrialPeriodLogin();
+            },
+          },
+          {
+            text: "Εγγραφή",
+            onPress: () => {
+              navigation.navigate("Subscription");
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+      return false;
+    }
+  };
+
   const handleLogin = async () => {
     if (username == null || password == null) {
       setError("*Παρακαλώ συμπληρώστε τα πεδία.");
@@ -198,38 +265,8 @@ const LoginScreen = () => {
 
         await getUserInfoFunction(extracted_token);
 
-        // Check subscription status after successful login
-        if (isProMember) {
-          AsyncStorage.setItem("ProMembership", "true");
-          navigation.navigate("Main");
-        } else {
-          // User has valid credentials but no active subscription
-          AsyncStorage.removeItem("ProMembership");
-          AsyncStorage.removeItem("userToken"); // Remove token to prevent access
-          AsyncStorage.removeItem("userInfo"); // Remove user info
-
-          setError(null); // Clear any existing errors
-          Alert.alert(
-            "Απαιτείται Συνδρομή",
-            "Για να συνδεθείτε πρέπει να έχετε ενεργή συνδρομή. Μπορείτε να κάνετε εγγραφή για νέα συνδρομή ή να χρησιμοποιήσετε τη δοκιμαστική έκδοση για να εξερευνήσετε την εφαρμογή.",
-            [
-              {
-                text: "Δοκιμαστική Χρήση",
-                style: "cancel",
-                onPress: () => {
-                  handleTrialPeriodLogin();
-                },
-              },
-              {
-                text: "Εγγραφή",
-                onPress: () => {
-                  navigation.navigate("Subscription");
-                },
-              },
-            ],
-            { cancelable: false }
-          );
-        }
+        // Check subscription status after successful login (wait for RevenueCat)
+        await checkSubscriptionAndNavigate();
       }
       setLoading(false);
     } catch (error) {
@@ -259,36 +296,8 @@ const LoginScreen = () => {
       if (result.success) {
         console.log("Google Sign-In successful:", result.user);
 
-        // Check subscription status before allowing access
-        if (isProMember) {
-          AsyncStorage.setItem("ProMembership", "true");
-          console.log("Navigating to main screen...");
-          navigation.navigate("Main");
-        } else {
-          // User authenticated but no active subscription
-          AsyncStorage.removeItem("ProMembership");
-
-          Alert.alert(
-            "Απαιτείται Συνδρομή",
-            "Για να συνδεθείτε με Google πρέπει να έχετε ενεργή συνδρομή. Μπορείτε να κάνετε εγγραφή για νέα συνδρομή ή να χρησιμοποιήσετε τη δοκιμαστική έκδοση.",
-            [
-              {
-                text: "Δοκιμαστική Χρήση",
-                style: "cancel",
-                onPress: () => {
-                  handleTrialPeriodLogin();
-                },
-              },
-              {
-                text: "Εγγραφή",
-                onPress: () => {
-                  navigation.navigate("Subscription");
-                },
-              },
-            ],
-            { cancelable: false }
-          );
-        }
+        // Check subscription status before allowing access (wait for RevenueCat)
+        await checkSubscriptionAndNavigate();
       } else {
         console.error("Google Sign-In failed:", result.error);
 
@@ -352,38 +361,8 @@ const LoginScreen = () => {
           // Get user info from backend
           await getUserInfoFunction(extracted_token);
 
-          // Check subscription status before allowing access
-          if (isProMember) {
-            AsyncStorage.setItem("ProMembership", "true");
-            console.log("✅ Navigating to main screen...");
-            navigation.navigate("Main");
-          } else {
-            // User authenticated but no active subscription
-            AsyncStorage.removeItem("ProMembership");
-            AsyncStorage.removeItem("userToken");
-            AsyncStorage.removeItem("userInfo");
-
-            Alert.alert(
-              "Απαιτείται Συνδρομή",
-              "Για να συνδεθείτε με Google πρέπει να έχετε ενεργή συνδρομή. Μπορείτε να κάνετε εγγραφή για νέα συνδρομή ή να χρησιμοποιήσετε τη δοκιμαστική έκδοση.",
-              [
-                {
-                  text: "Δοκιμαστική Χρήση",
-                  style: "cancel",
-                  onPress: () => {
-                    handleTrialPeriodLogin();
-                  },
-                },
-                {
-                  text: "Εγγραφή",
-                  onPress: () => {
-                    navigation.navigate("Subscription");
-                  },
-                },
-              ],
-              { cancelable: false }
-            );
-          }
+          // Check subscription status before allowing access (wait for RevenueCat)
+          await checkSubscriptionAndNavigate();
         } else {
           // Backend authentication failed
           console.error("❌ Backend authentication failed:", data);
@@ -450,38 +429,8 @@ const LoginScreen = () => {
           // Get user info from backend
           await getUserInfoFunction(extracted_token);
 
-          // Check subscription status before allowing access
-          if (isProMember) {
-            AsyncStorage.setItem("ProMembership", "true");
-            console.log("✅ Navigating to main screen...");
-            navigation.navigate("Main");
-          } else {
-            // User authenticated but no active subscription
-            AsyncStorage.removeItem("ProMembership");
-            AsyncStorage.removeItem("userToken");
-            AsyncStorage.removeItem("userInfo");
-
-            Alert.alert(
-              "Απαιτείται Συνδρομή",
-              "Για να συνδεθείτε με Google πρέπει να έχετε ενεργή συνδρομή. Μπορείτε να κάνετε εγγραφή για νέα συνδρομή ή να χρησιμοποιήσετε τη δοκιμαστική έκδοση.",
-              [
-                {
-                  text: "Δοκιμαστική Χρήση",
-                  style: "cancel",
-                  onPress: () => {
-                    handleTrialPeriodLogin();
-                  },
-                },
-                {
-                  text: "Εγγραφή",
-                  onPress: () => {
-                    navigation.navigate("Subscription");
-                  },
-                },
-              ],
-              { cancelable: false }
-            );
-          }
+          // Check subscription status before allowing access (wait for RevenueCat)
+          await checkSubscriptionAndNavigate();
         } else {
           // Backend authentication failed
           console.error("❌ Backend authentication failed:", data);
@@ -592,7 +541,8 @@ const LoginScreen = () => {
           googleLoading ||
           googleLoadingOfficial ||
           firebaseLoading ||
-          isAnyGoogleAuthInProgress ? (
+          isAnyGoogleAuthInProgress ||
+          revenueCatLoading ? (
             <View style={styles.loadingContainer}>
               <LoadingComponent />
             </View>

@@ -53,8 +53,8 @@ const ProfileScreen = ({}) => {
   const animatedViewRef = useRef(null);
   const navigation = useNavigation();
   const [user, setuser] = useState(null);
-  const [commentsNotification, setcommentsNotification] = useState(0);
-  const [chatNotification, setchatNotification] = useState(0);
+  const [commentsNotification, setcommentsNotification] = useState("0");
+  const [chatNotification, setchatNotification] = useState("0");
   const [sheet1isVisible, setsheet1IsVisible] = useState(false);
   const [sheet2isVisible, setsheet2IsVisible] = useState(false);
   const [accountError, setaccountError] = useState(false);
@@ -90,8 +90,10 @@ const ProfileScreen = ({}) => {
       "commentsNotifications"
     );
     let chatNotifications = await AsyncStorage.getItem("chatNotifications");
-    setcommentsNotification(commentsNotifications);
-    setchatNotification(chatNotifications);
+
+    // Default to "0" if null or undefined
+    setcommentsNotification(commentsNotifications || "0");
+    setchatNotification(chatNotifications || "0");
   };
 
   const navigateFunction = (index) => {

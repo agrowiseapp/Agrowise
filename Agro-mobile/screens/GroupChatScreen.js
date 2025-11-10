@@ -42,6 +42,8 @@ const GroupChatScreen = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [isDemoUser, setIsDemoUser] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
   const { isProMember } = useRevenueCat();
   const navigation = useNavigation();
 
@@ -66,7 +68,7 @@ const GroupChatScreen = () => {
         console.log("🔄 GroupChat - Starting auto-refresh interval");
         interval = setInterval(() => {
           console.log("🔄 GroupChat - Auto-refreshing messages...");
-          fetchMessages();
+          fetchMessages(null, true); // Pass true for isAutoRefresh
         }, 30000); // 30 seconds
       }
     };
@@ -182,10 +184,12 @@ const GroupChatScreen = () => {
     }
   };
 
-  const fetchMessages = async (userInfo = null) => {
+  const fetchMessages = async (userInfo = null, isAutoRefresh = false) => {
     try {
-      console.log("📨 GroupChat - Starting fetchMessages");
-      setLoading(true);
+      console.log("📨 GroupChat - Starting fetchMessages", isAutoRefresh ? "(auto-refresh)" : "(initial load)");
+      if (!isAutoRefresh) {
+        setLoading(true);
+      }
       let userToken = await AsyncStorage.getItem("userToken");
       console.log("🔑 GroupChat - userToken exists:", !!userToken);
 
@@ -259,8 +263,16 @@ const GroupChatScreen = () => {
           "messages"
         );
 
-        // Scroll to bottom after loading
-        setTimeout(() => scrollToBottom(), 100);
+        // Only scroll to bottom if it's initial load OR user is already at bottom
+        if (!isAutoRefresh) {
+          // Initial load - always scroll to bottom
+          setShouldAutoScroll(true);
+          setTimeout(() => scrollToBottom(false), 100);
+        } else if (shouldAutoScroll) {
+          // Auto-refresh - only scroll if user is already at bottom
+          setTimeout(() => scrollToBottom(false), 100);
+        }
+        // If isAutoRefresh && !shouldAutoScroll, don't interrupt user's scrolling
       } else {
         console.log(
           "❌ GroupChat - No messages found or API error:",
@@ -273,8 +285,10 @@ const GroupChatScreen = () => {
       Alert.alert("Σφάλμα", "Δεν μπόρεσαν να φορτωθούν τα μηνύματα");
     } finally {
       console.log("🏁 GroupChat - fetchMessages finally block");
-      setLoading(false);
-      setInitializing(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+        setInitializing(false);
+      }
     }
   };
 
@@ -334,8 +348,12 @@ const GroupChatScreen = () => {
         setMessages((prevMessages) => [...prevMessages, newMessage]);
         setInputText("");
 
+        // Re-enable auto-scroll when user sends a message
+        setShouldAutoScroll(true);
+        setIsUserScrolling(false);
+
         // Scroll to bottom after sending
-        setTimeout(() => scrollToBottom(), 100);
+        setTimeout(() => scrollToBottom(false), 100);
 
         console.log("Message sent successfully");
       } else {
@@ -355,9 +373,9 @@ const GroupChatScreen = () => {
     setRefreshing(false);
   };
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (animated = false) => {
     if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      flatListRef.current.scrollToEnd({ animated });
     }
   };
 
@@ -367,6 +385,102 @@ const GroupChatScreen = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatMessageDate = (dateString) => {
+    const messageDate = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const messageDay = new Date(
+      messageDate.getFullYear(),
+      messageDate.getMonth(),
+      messageDate.getDate()
+    );
+
+    const time = formatTime(dateString);
+
+    // Check if message is from today
+    if (messageDay.getTime() === today.getTime()) {
+      return `Σήμερα ${time}`;
+    }
+
+    // Check if message is from yesterday
+    if (messageDay.getTime() === yesterday.getTime()) {
+      return `Χθες ${time}`;
+    }
+
+    // Check if message is from this week (within last 7 days)
+    const daysDiff = Math.floor((today.getTime() - messageDay.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff < 7) {
+      const weekday = messageDate.toLocaleDateString("el-GR", { weekday: "long" });
+      return `${weekday} ${time}`;
+    }
+
+    // For older messages, show full date
+    const formattedDate = messageDate.toLocaleDateString("el-GR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return `${formattedDate} ${time}`;
+  };
+
+  const formatDateSeparator = (dateString) => {
+    const messageDate = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const messageDay = new Date(
+      messageDate.getFullYear(),
+      messageDate.getMonth(),
+      messageDate.getDate()
+    );
+
+    // Check if message is from today
+    if (messageDay.getTime() === today.getTime()) {
+      return "Σήμερα";
+    }
+
+    // Check if message is from yesterday
+    if (messageDay.getTime() === yesterday.getTime()) {
+      return "Χθες";
+    }
+
+    // Check if message is from this week
+    const daysDiff = Math.floor((today.getTime() - messageDay.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff < 7) {
+      return messageDate.toLocaleDateString("el-GR", { weekday: "long" });
+    }
+
+    // For older messages, show full date
+    return messageDate.toLocaleDateString("el-GR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const shouldShowDateSeparator = (currentMessage, previousMessage) => {
+    if (!previousMessage) return true;
+
+    const currentDate = new Date(currentMessage.date);
+    const previousDate = new Date(previousMessage.date);
+
+    const currentDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate()
+    );
+    const previousDay = new Date(
+      previousDate.getFullYear(),
+      previousDate.getMonth(),
+      previousDate.getDate()
+    );
+
+    return currentDay.getTime() !== previousDay.getTime();
   };
 
   const handleLongPress = (message) => {
@@ -459,104 +573,141 @@ const GroupChatScreen = () => {
     AsyncStorage.setItem("groupChatTooltipSeen", "true");
   };
 
-  const renderMessage = ({ item }) => (
-    <View
-      style={[
-        {
-          flexDirection: "row",
-          marginVertical: 4,
-          paddingHorizontal: 16,
-        },
-        item.isCurrentUser
-          ? { justifyContent: "flex-end" }
-          : { justifyContent: "flex-start" },
-      ]}
-    >
-      {/* Red flag for reported messages - positioned outside message bubble */}
-      {item.isReported && !item.isCurrentUser && (
-        <View
-          style={{
-            marginRight: 6,
-            marginTop: 14, // Align with message content
-          }}
-        >
-          <SimpleIcons name="flag" size={16} color="#dc2626" />
-        </View>
-      )}
+  const renderMessage = ({ item, index }) => {
+    const previousMessage = index > 0 ? messages[index - 1] : null;
+    const showDateSeparator = shouldShowDateSeparator(item, previousMessage);
 
-      <TouchableOpacity
-        onLongPress={() => handleLongPress(item)}
-        delayLongPress={500}
-        activeOpacity={item.isReported ? 1 : 0.7}
-        style={{
-          maxWidth: item.isReported && !item.isCurrentUser ? "72%" : "80%", // Adjust for flag space
-          minWidth: "40%", // Ensure minimum width for proper text layout
-          padding: 12,
-          borderRadius: 18,
-          backgroundColor: item.isCurrentUser
-            ? colors.Main[500]
-            : colors.Background.secondary,
-          opacity: item.isReported && !item.isCurrentUser ? 0.8 : 1,
-        }}
-      >
-        {!item.isCurrentUser && (
+    return (
+      <>
+        {/* Date Separator */}
+        {showDateSeparator && (
           <View
             style={{
-              flexDirection: "row",
               alignItems: "center",
-              marginBottom: 4,
+              marginVertical: 16,
             }}
           >
-            <Text
+            <View
               style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: colors.Main[600],
-                flex: 1,
+                backgroundColor: colors.Background?.secondary || "#f5f5f5",
+                paddingHorizontal: 16,
+                paddingVertical: 6,
+                borderRadius: 12,
               }}
-              numberOfLines={1}
-              ellipsizeMode="tail"
             >
-              {item.username}
-            </Text>
-            {item.isReported && (
               <Text
                 style={{
-                  fontSize: 10,
-                  color: "#dc2626",
-                  fontWeight: "500",
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: colors.Text?.secondary || "#666",
                 }}
               >
-                Αναφέρθηκε
+                {formatDateSeparator(item.date)}
               </Text>
-            )}
+            </View>
           </View>
         )}
-        <Text
-          style={{
-            fontSize: 16,
-            color: item.isCurrentUser ? "white" : colors.Text.primary,
-            lineHeight: 20,
-            fontStyle: item.isReported && !item.isCurrentUser ? "italic" : "normal",
-          }}
+
+        {/* Message Bubble */}
+        <View
+          style={[
+            {
+              flexDirection: "row",
+              marginVertical: 4,
+              paddingHorizontal: 16,
+            },
+            item.isCurrentUser
+              ? { justifyContent: "flex-end" }
+              : { justifyContent: "flex-start" },
+          ]}
         >
-          {item.isReported && !item.isCurrentUser ? "Προσωρινά μη διαθέσιμο" : item.text}
-        </Text>
-        <Text
-          style={{
-            fontSize: 11,
-            color: item.isCurrentUser
-              ? "rgba(255,255,255,0.8)"
-              : colors.Text.secondary,
-            marginTop: 4,
-            textAlign: "right",
-          }}
-        >
-          {formatTime(item.date)}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+          {/* Red flag for reported messages - positioned outside message bubble */}
+          {item.isReported && !item.isCurrentUser && (
+            <View
+              style={{
+                marginRight: 6,
+                marginTop: 14, // Align with message content
+              }}
+            >
+              <SimpleIcons name="flag" size={16} color="#dc2626" />
+            </View>
+          )}
+
+          <TouchableOpacity
+            onLongPress={() => handleLongPress(item)}
+            delayLongPress={500}
+            activeOpacity={item.isReported ? 1 : 0.7}
+            style={{
+              maxWidth: item.isReported && !item.isCurrentUser ? "72%" : "80%", // Adjust for flag space
+              minWidth: "40%", // Ensure minimum width for proper text layout
+              padding: 12,
+              borderRadius: 18,
+              backgroundColor: item.isCurrentUser
+                ? colors.Main[500]
+                : colors.Background.secondary,
+              opacity: item.isReported && !item.isCurrentUser ? 0.8 : 1,
+            }}
+          >
+            {!item.isCurrentUser && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: colors.Main[600],
+                    flex: 1,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {item.username}
+                </Text>
+                {item.isReported && (
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: "#dc2626",
+                      fontWeight: "500",
+                    }}
+                  >
+                    Αναφέρθηκε
+                  </Text>
+                )}
+              </View>
+            )}
+            <Text
+              style={{
+                fontSize: 16,
+                color: item.isCurrentUser ? "white" : colors.Text.primary,
+                lineHeight: 20,
+                fontStyle: item.isReported && !item.isCurrentUser ? "italic" : "normal",
+              }}
+            >
+              {item.isReported && !item.isCurrentUser ? "Προσωρινά μη διαθέσιμο" : item.text}
+            </Text>
+            <Text
+              style={{
+                fontSize: 11,
+                color: item.isCurrentUser
+                  ? "rgba(255,255,255,0.8)"
+                  : colors.Text.secondary,
+                marginTop: 4,
+                textAlign: "right",
+              }}
+            >
+              {formatMessageDate(item.date)}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  };
 
   // Demo user restriction screen - show this before loading screen
   if (isDemoUser) {
@@ -910,18 +1061,44 @@ const GroupChatScreen = () => {
             />
           }
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollToBottom()}
-          onLayout={() => scrollToBottom()}
+          onContentSizeChange={() => {
+            // Only auto-scroll if it's the initial load or user sent a message
+            if (shouldAutoScroll && !isUserScrolling) {
+              scrollToBottom(false);
+            }
+          }}
+          onLayout={() => {
+            // Scroll to bottom on initial layout without animation
+            if (shouldAutoScroll) {
+              scrollToBottom(false);
+            }
+          }}
+          onScrollBeginDrag={() => {
+            // User started scrolling manually
+            setIsUserScrolling(true);
+            setShouldAutoScroll(false);
+          }}
+          onMomentumScrollEnd={(event) => {
+            // Check if user scrolled to bottom
+            const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+            const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+
+            if (isAtBottom) {
+              // User scrolled back to bottom, re-enable auto-scroll
+              setShouldAutoScroll(true);
+              setIsUserScrolling(false);
+            }
+          }}
         />
 
         {/* Input */}
         <View
           style={{
             flexDirection: "row",
-            alignItems: "flex-end",
+            alignItems: "center",
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: 0,
+            paddingBottom: 12,
             borderTopWidth: 1,
             borderTopColor: colors.Border.light,
             backgroundColor: "white",
@@ -938,7 +1115,6 @@ const GroupChatScreen = () => {
               fontSize: 16,
               maxHeight: 100,
               marginRight: 8,
-              marginBottom: 10,
               backgroundColor: colors.Background.primary,
             }}
             placeholder="Γράψτε ένα μήνυμα..."

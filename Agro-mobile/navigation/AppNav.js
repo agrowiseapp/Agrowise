@@ -8,12 +8,16 @@ import DevModeIndicator from "../components/dev/DevModeIndicator";
 
 const AppNav = () => {
   const [SplashCompleted, setSplashCompleted] = useState(false);
-  const { currentOffering, customerInfo, isProMember } = useRevenueCat();
+  const { currentOffering, customerInfo, isProMember, isLoading: revenueCatLoading } = useRevenueCat();
   const [trialPeriod, setTrialPeriod] = useState(false);
+
+  console.log("🔍 AppNav - RevenueCat Loading:", revenueCatLoading);
+  console.log("🔍 AppNav - isProMember:", isProMember);
+  console.log("🔍 AppNav - SplashCompleted:", SplashCompleted);
 
   return (
     <NavigationContainer>
-      {!SplashCompleted ? (
+      {!SplashCompleted || revenueCatLoading ? (
         <SplashScreen setValue={setSplashCompleted} />
       ) : (
         <>
