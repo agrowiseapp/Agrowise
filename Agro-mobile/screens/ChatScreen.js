@@ -300,24 +300,26 @@ const ChatScreen = ({ route }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "height" : null}
-      style={{ flex: 1 }}
-    >
-      <AnimatedView style={styles.animatedView}>
-        {openSubBottomScreen ? (
-          <SubBottomScreen setopenSubBottomScreen={setopenSubBottomScreen} />
-        ) : (
-          <SafeAreaView style={styles.safeAreaView}>
-            <View style={styles.headerContainer}>
-              <ScreenTitle
-                title="Επικοινωνία"
-                back={true}
-                navigation={navigation}
-              />
-            </View>
+    <SafeAreaView style={styles.safeAreaView}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <AnimatedView style={styles.animatedView}>
+          {openSubBottomScreen ? (
+            <SubBottomScreen setopenSubBottomScreen={setopenSubBottomScreen} />
+          ) : (
+            <>
+              <View style={styles.headerContainer}>
+                <ScreenTitle
+                  title="Επικοινωνία"
+                  back={true}
+                  navigation={navigation}
+                />
+              </View>
 
-            <View style={styles.contentContainer}>
+              <View style={styles.contentContainer}>
               {loading ? (
                 <View style={styles.loadingContainer}>
                   <LoadingComponent />
@@ -366,11 +368,12 @@ const ChatScreen = ({ route }) => {
                   </View>
                 </View>
               )}
-            </View>
-          </SafeAreaView>
-        )}
-      </AnimatedView>
-    </KeyboardAvoidingView>
+              </View>
+            </>
+          )}
+        </AnimatedView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

@@ -71,6 +71,9 @@ const ChatComponent = ({ messages, loadingSendMessage, onSend }) => {
           keyExtractor={(item, index) => index.toString()}
           inverted={true}
           initialNumToRender={2}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={{ flexGrow: 1 }}
         />
       )}
 
