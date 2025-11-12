@@ -90,8 +90,6 @@ const ProfileScreen = ({}) => {
       "commentsNotifications"
     );
     let chatNotifications = await AsyncStorage.getItem("chatNotifications");
-
-    // Default to "0" if null or undefined
     setcommentsNotification(commentsNotifications || "0");
     setchatNotification(chatNotifications || "0");
   };

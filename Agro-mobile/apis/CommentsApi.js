@@ -7,7 +7,7 @@ const ReplyComment_url = "/comments/reply/";
 export async function postNewCommentApi(apiUrl, bodyObject, token) {
   let url_request = apiUrl;
   url_request = await returnUrl(url_request);
-  url = url_request + PostComment_url;
+  let url = url_request + PostComment_url;
 
   //console.log("BodyObject :", bodyObject);
   //console.log("url :", url);

@@ -18,8 +18,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "10",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "buildNumber": "21",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "icon": "./assets/Logo/icon.png",
+      "infoPlist": {
+        "CFBundleIconName": "AppIcon"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "aggro.application",
@@ -28,7 +35,7 @@
         "backgroundColor": "#ffffff"
       },
       "googleServicesFile": "./google-services.json",
-      "versionCode": 31
+      "versionCode": 45
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -57,7 +64,8 @@
             "newArchEnabled": true
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }

@@ -21,15 +21,12 @@ function useRevenueCat() {
   const [currentOffering, setcurrentOffering] =
     useState<PurchasesOffering | null>(null);
   const [customerInfo, setcustomerInfo] = useState<CustomerInfo | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   let isProMember =
     customerInfo?.activeSubscriptions.includes(typesOfMembership.monthly) ||
     customerInfo?.activeSubscriptions.includes(typesOfMembership.yearly);
 
   console.log("isPRoMember : ", isProMember);
-  console.log("RevenueCat Loading: ", isLoading);
   console.log(
     "Development Mode: ",
     shouldBypassPayments() ? "ON - Payments Bypassed" : "OFF - Payments Enabled"
@@ -39,14 +36,8 @@ function useRevenueCat() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
-        console.log("🔄 RevenueCat: Starting initialization...");
-
         // Check if we should bypass payments in development
         if (shouldBypassPayments()) {
-          console.log("🚀 RevenueCat: Using mock data (development mode)");
 
           // Set mock subscription data for development
           const mockCustomerInfo = {
@@ -107,49 +98,35 @@ function useRevenueCat() {
 
           setcustomerInfo(mockCustomerInfo);
           setcurrentOffering(null); // No offerings needed in dev mode
-          setIsLoading(false);
-          console.log("✅ RevenueCat: Mock data loaded successfully");
           return;
         }
 
         // Normal RevenueCat flow for production
-        console.log("🔧 RevenueCat: Configuring...");
         // await Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
 
         // Configure RevenueCat first (only if not already configured)
         const apiKey = Platform.OS === "android" ? apiKeys.google : apiKeys.apple;
-
+        
         try {
           // Check if already configured by trying to get customer info
           await Purchases.getCustomerInfo();
-          console.log("✅ RevenueCat: Already configured");
         } catch (configError) {
           // Not configured yet, so configure now
-          console.log("🔧 RevenueCat: Configuring for first time...");
           await Purchases.configure({ apiKey });
-          console.log("✅ RevenueCat: Configuration complete");
         }
 
         // Now get offerings and customer info
-        console.log("📦 RevenueCat: Fetching offerings and customer info...");
         const offerings = await Purchases.getOfferings();
         const customerInfo = await Purchases.getCustomerInfo();
 
-        console.log("✅ RevenueCat: Customer info loaded");
-        console.log("📊 RevenueCat: Active subscriptions:", customerInfo.activeSubscriptions);
+        //console.log("CustomerInfo : ", customerInfo);
+        //console.log("offerings : ", offerings.current);
 
         setcustomerInfo(customerInfo);
         setcurrentOffering(offerings.current);
-        setIsLoading(false);
-        console.log("✅ RevenueCat: Initialization complete");
       } catch (error) {
-        console.error("❌ RevenueCat Error: ", error);
-        console.error("❌ RevenueCat Error (JSON): ", JSON.stringify(error));
-        setError(error instanceof Error ? error.message : "Unknown error");
-        setIsLoading(false);
-
-        // Set customerInfo to empty state so isProMember becomes false
-        setcustomerInfo(null);
+        console.log("Hook Error : ", JSON.stringify(error));
+        console.log("Hook Error : ", error);
       }
     };
 
@@ -172,8 +149,6 @@ function useRevenueCat() {
     currentOffering,
     customerInfo,
     isProMember,
-    isLoading,
-    error,
     isDevelopmentMode: shouldBypassPayments(),
   };
 }

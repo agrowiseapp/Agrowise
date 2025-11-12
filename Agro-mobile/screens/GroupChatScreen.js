@@ -42,13 +42,26 @@ const GroupChatScreen = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [isDemoUser, setIsDemoUser] = useState(false);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const latestMessageTimestamp = useRef(null);
+  const pendingNewMessages = useRef([]);
+  const intervalRef = useRef(null);
   const { isProMember } = useRevenueCat();
   const navigation = useNavigation();
 
   useEffect(() => {
     initializeChat();
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) {
+        console.log("🧹 GroupChat - Component unmounting, clearing interval");
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, []);
 
   // Re-initialize when isProMember status changes
@@ -61,23 +74,24 @@ const GroupChatScreen = () => {
 
   // Auto-refresh messages every 30 seconds with navigation listeners
   useEffect(() => {
-    let interval;
-
     const startInterval = () => {
-      if (!isDemoUser && !initializing && currentUser && !interval) {
+      // Only start if no interval is running and conditions are met
+      if (!intervalRef.current && !isDemoUser && !initializing && currentUser) {
         console.log("🔄 GroupChat - Starting auto-refresh interval");
-        interval = setInterval(() => {
+        intervalRef.current = setInterval(() => {
           console.log("🔄 GroupChat - Auto-refreshing messages...");
-          fetchMessages(null, true); // Pass true for isAutoRefresh
+          fetchMessages();
         }, 30000); // 30 seconds
+      } else if (intervalRef.current) {
+        console.log("⚠️ GroupChat - Interval already running, skipping start");
       }
     };
 
     const stopInterval = () => {
-      if (interval) {
+      if (intervalRef.current) {
         console.log("🛑 GroupChat - Clearing auto-refresh interval");
-        clearInterval(interval);
-        interval = null;
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
 
@@ -184,12 +198,10 @@ const GroupChatScreen = () => {
     }
   };
 
-  const fetchMessages = async (userInfo = null, isAutoRefresh = false) => {
+  const fetchMessages = async (userInfo = null) => {
     try {
-      console.log("📨 GroupChat - Starting fetchMessages", isAutoRefresh ? "(auto-refresh)" : "(initial load)");
-      if (!isAutoRefresh) {
-        setLoading(true);
-      }
+      console.log("📨 GroupChat - Starting fetchMessages");
+      setLoading(true);
       let userToken = await AsyncStorage.getItem("userToken");
       console.log("🔑 GroupChat - userToken exists:", !!userToken);
 
@@ -252,27 +264,60 @@ const GroupChatScreen = () => {
           };
         });
 
-        // Sort messages by date (oldest first for chat display)
-        transformedMessages.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Sort messages by date (newest first for inverted FlatList)
+        transformedMessages.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         console.log("📝 GroupChat - Setting messages in state...");
-        setMessages(transformedMessages);
-        console.log(
-          "✅ GroupChat - Loaded",
-          transformedMessages.length,
-          "messages"
-        );
 
-        // Only scroll to bottom if it's initial load OR user is already at bottom
-        if (!isAutoRefresh) {
-          // Initial load - always scroll to bottom
-          setShouldAutoScroll(true);
-          setTimeout(() => scrollToBottom(false), 100);
-        } else if (shouldAutoScroll) {
-          // Auto-refresh - only scroll if user is already at bottom
-          setTimeout(() => scrollToBottom(false), 100);
+        if (isFirstLoad) {
+          // Initial load - load all messages
+          console.log("📍 GroupChat - Initial load, loading all messages");
+          setMessages(transformedMessages);
+          setIsFirstLoad(false);
+
+          // Track the latest message timestamp
+          if (transformedMessages.length > 0) {
+            latestMessageTimestamp.current = new Date(transformedMessages[0].date);
+            console.log("📅 Latest message timestamp set:", latestMessageTimestamp.current);
+          }
+        } else {
+          // Subsequent loads - only add NEW messages (newer than what we have)
+          const currentLatest = latestMessageTimestamp.current;
+
+          const newMessages = transformedMessages.filter((msg) => {
+            const msgDate = new Date(msg.date);
+            return currentLatest ? msgDate > currentLatest : false;
+          });
+
+          if (newMessages.length > 0) {
+            console.log(`🆕 GroupChat - ${newMessages.length} truly new messages detected`);
+            console.log("📅 New messages are newer than:", currentLatest);
+
+            // Update latest timestamp
+            latestMessageTimestamp.current = new Date(newMessages[0].date);
+
+            // If user is at bottom, auto-add new messages
+            if (isAtBottom) {
+              console.log("📍 GroupChat - User at bottom, prepending new messages");
+              // Add any pending messages first, then the new ones
+              const allNewMessages = [...newMessages, ...pendingNewMessages.current];
+              pendingNewMessages.current = [];
+              setMessages((prevMessages) => [...allNewMessages, ...prevMessages]);
+            } else {
+              // User scrolled up, store messages in pending array
+              console.log("📍 GroupChat - User scrolled up, storing messages in pending");
+              pendingNewMessages.current = [...newMessages, ...pendingNewMessages.current];
+              setNewMessageCount(pendingNewMessages.current.length);
+            }
+          } else {
+            console.log("✅ GroupChat - No new messages, no update needed");
+          }
         }
-        // If isAutoRefresh && !shouldAutoScroll, don't interrupt user's scrolling
+
+        console.log(
+          "✅ GroupChat - Current message count:",
+          messages.length
+        );
       } else {
         console.log(
           "❌ GroupChat - No messages found or API error:",
@@ -285,10 +330,8 @@ const GroupChatScreen = () => {
       Alert.alert("Σφάλμα", "Δεν μπόρεσαν να φορτωθούν τα μηνύματα");
     } finally {
       console.log("🏁 GroupChat - fetchMessages finally block");
-      if (!isAutoRefresh) {
-        setLoading(false);
-        setInitializing(false);
-      }
+      setLoading(false);
+      setInitializing(false);
     }
   };
 
@@ -345,15 +388,11 @@ const GroupChatScreen = () => {
           isCurrentUser: true,
         };
 
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
+        // Update latest timestamp when sending
+        latestMessageTimestamp.current = new Date(newMessage.date);
+
+        setMessages((prevMessages) => [newMessage, ...prevMessages]);
         setInputText("");
-
-        // Re-enable auto-scroll when user sends a message
-        setShouldAutoScroll(true);
-        setIsUserScrolling(false);
-
-        // Scroll to bottom after sending
-        setTimeout(() => scrollToBottom(false), 100);
 
         console.log("Message sent successfully");
       } else {
@@ -369,13 +408,43 @@ const GroupChatScreen = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // On manual refresh, treat as initial load to get all messages
+    setIsFirstLoad(true);
+    setNewMessageCount(0);
+    pendingNewMessages.current = [];
     await fetchMessages(currentUser);
     setRefreshing(false);
   };
 
-  const scrollToBottom = (animated = false) => {
-    if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated });
+  const handleScroll = (event) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    // For inverted list, check if we're at the top (which is visually bottom)
+    const isNearBottom = contentOffset.y < 100;
+    setIsAtBottom(isNearBottom);
+
+    // When user scrolls to bottom and there are pending messages, add them
+    if (isNearBottom && pendingNewMessages.current.length > 0) {
+      console.log("📍 GroupChat - User scrolled to bottom, adding pending messages");
+      const messagesToAdd = [...pendingNewMessages.current];
+      pendingNewMessages.current = [];
+      setNewMessageCount(0);
+      setMessages((prevMessages) => [...messagesToAdd, ...prevMessages]);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (flatListRef.current) {
+      // If there are pending new messages, add them
+      if (pendingNewMessages.current.length > 0) {
+        console.log("📍 GroupChat - Adding pending messages before scrolling");
+        const messagesToAdd = [...pendingNewMessages.current];
+        pendingNewMessages.current = [];
+        setNewMessageCount(0);
+        setMessages((prevMessages) => [...messagesToAdd, ...prevMessages]);
+      }
+
+      flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+      setIsAtBottom(true);
     }
   };
 
@@ -574,8 +643,9 @@ const GroupChatScreen = () => {
   };
 
   const renderMessage = ({ item, index }) => {
-    const previousMessage = index > 0 ? messages[index - 1] : null;
-    const showDateSeparator = shouldShowDateSeparator(item, previousMessage);
+    // For inverted list, we need to check in reverse order
+    const nextMessage = index > 0 ? messages[index - 1] : null;
+    const showDateSeparator = shouldShowDateSeparator(item, nextMessage);
 
     return (
       <>
@@ -925,13 +995,14 @@ const GroupChatScreen = () => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.Background.primary }}
+      edges={["top", "left", "right"]}
     >
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: colors.Background.primary }}
-        edges={["top", "left", "right"]}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <StatusBar
           barStyle="dark-content"
@@ -1051,6 +1122,7 @@ const GroupChatScreen = () => {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
+          inverted
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingVertical: 8 }}
           refreshControl={
@@ -1061,44 +1133,74 @@ const GroupChatScreen = () => {
             />
           }
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => {
-            // Only auto-scroll if it's the initial load or user sent a message
-            if (shouldAutoScroll && !isUserScrolling) {
-              scrollToBottom(false);
-            }
-          }}
-          onLayout={() => {
-            // Scroll to bottom on initial layout without animation
-            if (shouldAutoScroll) {
-              scrollToBottom(false);
-            }
-          }}
-          onScrollBeginDrag={() => {
-            // User started scrolling manually
-            setIsUserScrolling(true);
-            setShouldAutoScroll(false);
-          }}
-          onMomentumScrollEnd={(event) => {
-            // Check if user scrolled to bottom
-            const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-            const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
-
-            if (isAtBottom) {
-              // User scrolled back to bottom, re-enable auto-scroll
-              setShouldAutoScroll(true);
-              setIsUserScrolling(false);
-            }
-          }}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         />
+
+        {/* New Messages Banner */}
+        {newMessageCount > 0 && (
+          <Animatable.View
+            animation="fadeInUp"
+            duration={300}
+            style={{
+              position: "absolute",
+              bottom: 80,
+              alignSelf: "center",
+              backgroundColor: colors.Main[500],
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 20,
+              flexDirection: "row",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
+            }}
+          >
+            <TouchableOpacity
+              onPress={scrollToBottom}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <SimpleIcons
+                name="arrow-down"
+                size={16}
+                color="white"
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                {newMessageCount === 1
+                  ? "1 νέο μήνυμα"
+                  : `${newMessageCount} νέα μηνύματα`}
+              </Text>
+            </TouchableOpacity>
+          </Animatable.View>
+        )}
 
         {/* Input */}
         <View
           style={{
             flexDirection: "row",
-            alignItems: "center",
+            alignItems: "flex-end",
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: 12,
+            paddingBottom: 0,
             borderTopWidth: 1,
             borderTopColor: colors.Border.light,
             backgroundColor: "white",
@@ -1115,6 +1217,7 @@ const GroupChatScreen = () => {
               fontSize: 16,
               maxHeight: 100,
               marginRight: 8,
+              marginBottom: 10,
               backgroundColor: colors.Background.primary,
             }}
             placeholder="Γράψτε ένα μήνυμα..."
@@ -1137,6 +1240,7 @@ const GroupChatScreen = () => {
                   : colors.Border.light,
               justifyContent: "center",
               alignItems: "center",
+              marginBottom: 10,
             }}
           >
             {sending ? (
@@ -1384,8 +1488,8 @@ const GroupChatScreen = () => {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

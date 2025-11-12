@@ -243,9 +243,7 @@ const RegisterScreen = () => {
               <View>
                 {/* Image */}
 
-                <Text className="text-5xl text-center text-white font-semibold">
-                  AgroWise
-                </Text>
+                <Text style={styles.logoTitle}>AgroWise</Text>
                 <Text style={styles.welcomeText}>Εγγραφή νέου χρήστη</Text>
               </View>
             </View>
@@ -253,19 +251,18 @@ const RegisterScreen = () => {
             {/* User Created - Not Created */}
             {Success ? (
               <>
-                <View className="mt-10 px-3 ">
-                  <Text className="text-xl text-white text-center">
+                <View style={styles.successContainer}>
+                  <Text style={styles.successTitle}>
                     Ο χρήστης δημιουργήθηκε επιτυχώς!
                   </Text>
 
-                  <Text className="text-center  text-white text-base font-light">
+                  <Text style={styles.successSubtitle}>
                     Επιστροφή στην σελίδα σύνδεσης
                   </Text>
 
-                  {/* REGISTER BUTTON */}
+                  {/* RETURN BUTTON */}
                   <TouchableOpacity
-                    style={styles.button}
-                    className="shadow-sm mt-10"
+                    style={styles.successButton}
                     onPress={navigateToLogin}
                   >
                     <Text style={styles.buttonText}>Επιστροφή</Text>
@@ -279,9 +276,8 @@ const RegisterScreen = () => {
                   {/* Onoma */}
                   <>
                     <TextInput
-                      className="shadow-sm"
                       style={styles.input}
-                      placeholderTextColor="gray"
+                      placeholderTextColor="#999"
                       autoCapitalize="none"
                       placeholder="Όνομα"
                       returnKeyType="next"
@@ -299,10 +295,9 @@ const RegisterScreen = () => {
                   {/* Epitheto */}
                   <>
                     <TextInput
-                      className="shadow-sm"
                       style={styles.input}
                       placeholder="Επώνυμο"
-                      placeholderTextColor="gray"
+                      placeholderTextColor="#999"
                       returnKeyType="next"
                       value={lastName}
                       onChangeText={(text) => setLastName(text)}
@@ -318,10 +313,9 @@ const RegisterScreen = () => {
                   {/* Email */}
                   <>
                     <TextInput
-                      className="shadow-sm"
                       style={styles.input}
                       placeholder="Ηλ. Ταχυδρομείο"
-                      placeholderTextColor="gray"
+                      placeholderTextColor="#999"
                       returnKeyType="next"
                       value={email}
                       onChangeText={(text) => setemail(text)}
@@ -338,10 +332,9 @@ const RegisterScreen = () => {
                   {/* Password */}
                   <>
                     <TextInput
-                      className="shadow-sm"
                       style={styles.input}
                       placeholder="Κωδικός"
-                      placeholderTextColor="gray"
+                      placeholderTextColor="#999"
                       returnKeyType="next"
                       value={password}
                       onChangeText={(text) => setPassword(text)}
@@ -350,14 +343,11 @@ const RegisterScreen = () => {
                   </>
 
                   {/* Confirm Password */}
-                  <View
-                    className="flex-row justify-center items-center"
-                    style={styles.inputPass}
-                  >
+                  <View style={styles.inputPassContainer}>
                     <TextInput
-                      className="shadow-sm flex-1 py-4"
+                      style={styles.inputPassField}
                       placeholder="Επανάληψη Κωδικού"
-                      placeholderTextColor="gray"
+                      placeholderTextColor="#999"
                       returnKeyType="next"
                       value={confirmPassword}
                       onChangeText={(text) => setconfirmPassword(text)}
@@ -365,19 +355,16 @@ const RegisterScreen = () => {
                     />
                     {/* Show Password */}
                     <TouchableOpacity
+                      style={styles.eyeIconButton}
                       onPress={() => {
                         setshowPassword(!showPassword);
                       }}
                     >
-                      {showPassword ? (
-                        <Text>
-                          <SimpleIcons name="eye" size={24} color="gray" />
-                        </Text>
-                      ) : (
-                        <Text>
-                          <SimpleIcons name="eye-off" size={24} color="gray" />
-                        </Text>
-                      )}
+                      <SimpleIcons
+                        name={showPassword ? "eye" : "eye-off"}
+                        size={20}
+                        color="#666"
+                      />
                     </TouchableOpacity>
                   </View>
 
@@ -392,10 +379,9 @@ const RegisterScreen = () => {
                   {/* Phone */}
                   <>
                     <TextInput
-                      className="shadow-sm"
                       style={styles.input}
                       placeholder="Τηλέφωνο"
-                      placeholderTextColor="gray"
+                      placeholderTextColor="#999"
                       returnKeyType="next"
                       maxLength={10}
                       value={phone}
@@ -405,86 +391,64 @@ const RegisterScreen = () => {
                     {/* Error */}
                     {error5 !== null && error5 !== "" && (
                       <View style={styles.errorContainer}>
-                        <Text style={styles.errorText} className="mb-3">
-                          {error5}
-                        </Text>
+                        <Text style={styles.errorText}>{error5}</Text>
                       </View>
                     )}
                   </>
 
                   {/* Avatar */}
                   <>
-                    <Text className="text-base text-white ml-3 mt-5 font-semibold">
-                      Επιλέξτε Avatar
-                    </Text>
-                    <View className="flex-row justify-around items-center  mt-1 mb-2">
-                      <TouchableOpacity
-                        style={avatar === 5 ? styles.avatar_selected : ""}
-                        onPress={() => {
-                          changeAvatar(5);
-                        }}
-                      >
-                        <Image
-                          source={getAvatarSource(5)}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            backgroundColor: "#fff",
+                    <View style={styles.avatarSection}>
+                      <Text style={styles.avatarLabel}>Επιλέξτε Avatar</Text>
+                      <View style={styles.avatarContainer}>
+                        <TouchableOpacity
+                          style={avatar === 5 ? styles.avatar_selected : styles.avatarButton}
+                          onPress={() => {
+                            changeAvatar(5);
                           }}
-                        />
-                      </TouchableOpacity>
+                        >
+                          <Image
+                            source={getAvatarSource(5)}
+                            style={styles.avatarImage}
+                          />
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={avatar === 6 ? styles.avatar_selected : ""}
-                        onPress={() => {
-                          changeAvatar(6);
-                        }}
-                      >
-                        <Image
-                          source={getAvatarSource(6)}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            backgroundColor: "#fff",
+                        <TouchableOpacity
+                          style={avatar === 6 ? styles.avatar_selected : styles.avatarButton}
+                          onPress={() => {
+                            changeAvatar(6);
                           }}
-                        />
-                      </TouchableOpacity>
+                        >
+                          <Image
+                            source={getAvatarSource(6)}
+                            style={styles.avatarImage}
+                          />
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={avatar === 7 ? styles.avatar_selected : ""}
-                        onPress={() => {
-                          changeAvatar(7);
-                        }}
-                      >
-                        <Image
-                          source={getAvatarSource(7)}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            backgroundColor: "#fff",
+                        <TouchableOpacity
+                          style={avatar === 7 ? styles.avatar_selected : styles.avatarButton}
+                          onPress={() => {
+                            changeAvatar(7);
                           }}
-                        />
-                      </TouchableOpacity>
+                        >
+                          <Image
+                            source={getAvatarSource(7)}
+                            style={styles.avatarImage}
+                          />
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={avatar === 8 ? styles.avatar_selected : ""}
-                        onPress={() => {
-                          changeAvatar(8);
-                        }}
-                      >
-                        <Image
-                          source={getAvatarSource(8)}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            backgroundColor: "#fff",
+                        <TouchableOpacity
+                          style={avatar === 8 ? styles.avatar_selected : styles.avatarButton}
+                          onPress={() => {
+                            changeAvatar(8);
                           }}
-                        />
-                      </TouchableOpacity>
+                        >
+                          <Image
+                            source={getAvatarSource(8)}
+                            style={styles.avatarImage}
+                          />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </>
 
@@ -506,11 +470,10 @@ const RegisterScreen = () => {
                     style={[
                       styles.button,
                       {
-                        backgroundColor: colors.Second[500],
                         opacity: !isChecked ? 0.5 : 1, // Disable button if isLoading or checkbox is not checked
+                        marginTop: 20,
                       },
                     ]}
-                    className="shadow-sm mt-5 mb-10"
                     onPress={handleRegister}
                     disabled={!isChecked && buttonIsPressed} // Disable button if isLoading or checkbox is not checked
                   >
@@ -553,40 +516,86 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 20,
-    marginTop: 40,
+    marginBottom: 25,
+    marginTop: 20,
+  },
+  logoTitle: {
+    fontSize: 48,
+    fontWeight: "600",
+    color: "white",
+    textAlign: "center",
   },
   logo: {
-    fontSize: 24,
-    fontWeight: "500",
+    fontSize: 48,
+    fontWeight: "600",
     marginBottom: 10,
+    color: "white",
   },
   welcomeText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#fff",
     textAlign: "center",
     fontWeight: "300",
   },
   formContainer: {
-    width: "80%",
-    paddingHorizontal: 20,
+    width: "90%",
+    paddingHorizontal: 8,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "lightgray",
-    backgroundColor: "#fafafa",
-    borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginTop: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    fontSize: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
   },
   inputPass: {
-    borderWidth: 1,
-    borderColor: "lightgray",
-    backgroundColor: "#fafafa",
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    marginTop: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  inputPassContainer: {
+    position: "relative",
+    marginBottom: 12,
+  },
+  inputPassField: {
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingRight: 50,
+    fontSize: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  eyeIconButton: {
+    position: "absolute",
+    right: 16,
+    top: "50%",
+    transform: [{ translateY: -10 }],
   },
   inputdate: {
     borderWidth: 1,
@@ -620,9 +629,17 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.Second[500],
-    paddingVertical: 15,
-    borderRadius: 25,
+    paddingVertical: 16,
+    borderRadius: 10,
     marginBottom: 50,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
   },
   buttonOutline: {
     borderColor: colors.Third[500],
@@ -633,7 +650,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
     textAlign: "center",
   },
   termsContainer: {
@@ -664,15 +681,74 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   errorContainer: {
-    backgroundColor: "red",
-    padding: 3,
+    backgroundColor: "#dc2626",
+    padding: 8,
     marginTop: 4,
-    borderRadius: 3,
+    marginBottom: 4,
+    borderRadius: 8,
+  },
+  avatarSection: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  avatarLabel: {
+    fontSize: 15,
+    color: "white",
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  avatarContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  avatarButton: {
+    padding: 2,
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#fff",
   },
   avatar_selected: {
-    borderWidth: 4,
-    borderColor: colors.Main[700],
-    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: colors.Second[500],
+    borderRadius: 27,
+    padding: 2,
+  },
+  successContainer: {
+    marginTop: 40,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  successTitle: {
+    fontSize: 22,
+    color: "white",
+    textAlign: "center",
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: "white",
+    textAlign: "center",
+    fontWeight: "300",
+    marginBottom: 40,
+  },
+  successButton: {
+    backgroundColor: colors.Second[500],
+    paddingVertical: 16,
+    paddingHorizontal: 60,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
   },
 });
 

@@ -7,7 +7,7 @@
 	<key>REVERSED_CLIENT_ID</key>
 	<string>com.googleusercontent.apps.990770526562-kr21jdh8lfe9u3ospc69aq101084o5j1</string>
 	<key>ANDROID_CLIENT_ID</key>
-	<string>990770526562-eop4oa0n1p3krv5f1d5526p9fa8s6n5t.apps.googleusercontent.com</string>
+	<string>990770526562-3gukbmpplfqgo8n80ud27521urutuk31.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyCMm8SZuGoWBrObl9CQ-KNRLU0nML899HM</string>
 	<key>GCM_SENDER_ID</key>
@@ -19,7 +19,7 @@
 	<key>PROJECT_ID</key>
 	<string>agrowise-5e376</string>
 	<key>STORAGE_BUCKET</key>
-	<string>agrowise-5e376.appspot.com</string>
+	<string>agrowise-5e376.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>

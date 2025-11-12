@@ -29,7 +29,7 @@ const SelectedPost = ({
   const [post, setpost] = useState(null);
   const [commentsArray, setcommentsArray] = useState(null);
   const scrollViewRef = useRef(null);
-  const [scrollToBottom, setScrollToBottom] = useState(true);
+  const [scrollToBottom, setScrollToBottom] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -134,11 +134,6 @@ const SelectedPost = ({
           style={styles.contentScrollView}
           contentContainerStyle={{ flexGrow: 1 }}
           ref={scrollViewRef}
-          onContentSizeChange={() => {
-            if (scrollToBottom) {
-              scrollViewRef.current.scrollToEnd({ animated: true });
-            }
-          }}
         >
           {loading ? (
             <Loading />

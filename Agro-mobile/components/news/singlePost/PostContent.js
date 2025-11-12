@@ -108,8 +108,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    maxHeight: 300,
-    minHeight: 150,
+    aspectRatio: 1,
     borderRadius: 12,
     resizeMode: "contain",
   },

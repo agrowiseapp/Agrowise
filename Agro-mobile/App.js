@@ -7,6 +7,7 @@ import * as Notifications from "expo-notifications";
 import { useRef, useState, useEffect } from "react";
 import AsyncStorage from "./utils/AsyncStorage";
 import GoogleSignInService from "./services/GoogleSignInService";
+import FirebaseAuthService from "./services/FirebaseAuthService";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -23,7 +24,9 @@ export default function App() {
   const responseListener = useRef();
 
   useEffect(() => {
+    // Configure Google Sign-In services
     GoogleSignInService.configure();
+    FirebaseAuthService.configure();
   }, []);
 
   //console.log("customerInfo : ", customerInfo);

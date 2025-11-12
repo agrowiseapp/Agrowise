@@ -1,11 +1,16 @@
-import auth from '@react-native-firebase/auth';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import auth from "@react-native-firebase/auth";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 class FirebaseAuthService {
   constructor() {
     this.isConfigured = false;
-    // Web client ID from your google-services.json
-    this.webClientId = '990770526562-ilsmjhrc84o6c624qnvr502dmouv9ukr.apps.googleusercontent.com';
+    // Web client ID from google-services.json other_platform_oauth_client (type 3)
+    //this.webClientId = '990770526562-eum8itu9du9i86l91edth0076p4eoap6.apps.googleusercontent.com';
+    this.webClientId =
+      "990770526562-pflqupb4cdn44to3mmsu5ab4fvbjabb9.apps.googleusercontent.com";
+    // iOS client ID from GoogleService-Info.plist
+    this.iosClientId =
+      "990770526562-kr21jdh8lfe9u3ospc69aq101084o5j1.apps.googleusercontent.com";
   }
 
   /**
@@ -21,19 +26,19 @@ class FirebaseAuthService {
         webClientId: this.webClientId,
         offlineAccess: true,
         forceCodeForRefreshToken: true, // Force refresh token
-        accountName: '', // Don't use stored account
-        iosClientId: this.webClientId, // Use same client ID for iOS
-        hostedDomain: '', // No domain restriction
-        loginHint: '', // No login hint
+        accountName: "", // Don't use stored account
+        iosClientId: this.iosClientId, // iOS-specific client ID from GoogleService-Info.plist
+        hostedDomain: "", // No domain restriction
+        loginHint: "", // No login hint
         includeServerAuthCode: true, // Include server auth code
         serverClientId: this.webClientId, // Server client ID
         profileImageSize: 120, // Profile image size
       });
-      
+
       this.isConfigured = true;
-      console.log('🔧 Firebase Google Sign-In configured successfully');
+      console.log("🔧 Firebase Google Sign-In configured successfully");
     } catch (error) {
-      console.error('❌ Error configuring Google Sign-In:', error);
+      console.error("❌ Error configuring Google Sign-In:", error);
       throw error;
     }
   }
@@ -47,41 +52,45 @@ class FirebaseAuthService {
       // Configure if not already done
       this.configure();
 
-      console.log('🚀 Starting Firebase Google Sign-In...');
+      console.log("🚀 Starting Firebase Google Sign-In...");
 
       // Check if device supports Google Play services
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
 
       // Sign out any existing user first to force account selection
       try {
         await GoogleSignin.signOut();
-        console.log('🧹 Cleared previous Google session');
+        console.log("🧹 Cleared previous Google session");
       } catch (signOutError) {
-        console.log('⚠️ No previous session to clear');
+        console.log("⚠️ No previous session to clear");
       }
 
       // Get the user's ID token with forced account selection
       const signInResult = await GoogleSignin.signIn();
-      console.log('✅ Google Sign-In successful');
+      console.log("✅ Google Sign-In successful");
 
       // Get the ID token - handle different versions of the library
       const idToken = signInResult.data?.idToken || signInResult.idToken;
-      
+
       if (!idToken) {
-        throw new Error('No ID token received from Google Sign-In');
+        throw new Error("No ID token received from Google Sign-In");
       }
 
       // Create a Google credential with the token
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
 
       // Sign-in the user with the credential
-      const firebaseResult = await auth().signInWithCredential(googleCredential);
-      
-      console.log('🎉 Firebase authentication successful');
-      console.log('👤 User:', firebaseResult.user.email);
+      const firebaseResult = await auth().signInWithCredential(
+        googleCredential
+      );
+
+      console.log("🎉 Firebase authentication successful");
+      console.log("👤 User:", firebaseResult.user.email);
 
       const user = firebaseResult.user;
-      
+
       return {
         success: true,
         idToken: idToken, // Include idToken for backend authentication
@@ -91,42 +100,42 @@ class FirebaseAuthService {
           displayName: user.displayName,
           photoURL: user.photoURL,
           emailVerified: user.emailVerified,
-          providerId: 'google.com',
+          providerId: "google.com",
           metadata: {
             creationTime: user.metadata.creationTime,
             lastSignInTime: user.metadata.lastSignInTime,
-          }
+          },
         },
         firebaseUser: user,
         additionalUserInfo: firebaseResult.additionalUserInfo,
       };
-
     } catch (error) {
-      console.error('❌ Google Sign-In failed:', error);
-      
-      if (error.code === 'sign_in_cancelled') {
+      alert(error);
+      console.error("❌ Google Sign-In failed:", error);
+
+      if (error.code === "sign_in_cancelled") {
         return {
           success: false,
-          error: 'User cancelled the sign-in flow',
-          code: 'USER_CANCELLED',
+          error: "User cancelled the sign-in flow",
+          code: "USER_CANCELLED",
         };
-      } else if (error.code === 'sign_in_required') {
+      } else if (error.code === "sign_in_required") {
         return {
           success: false,
-          error: 'Sign-in required',
-          code: 'SIGN_IN_REQUIRED',
+          error: "Sign-in required",
+          code: "SIGN_IN_REQUIRED",
         };
-      } else if (error.code === 'play_services_not_available') {
+      } else if (error.code === "play_services_not_available") {
         return {
           success: false,
-          error: 'Google Play Services not available',
-          code: 'PLAY_SERVICES_UNAVAILABLE',
+          error: "Google Play Services not available",
+          code: "PLAY_SERVICES_UNAVAILABLE",
         };
       } else {
         return {
           success: false,
-          error: error.message || 'An unknown error occurred',
-          code: 'UNKNOWN_ERROR',
+          error: error.message || "An unknown error occurred",
+          code: "UNKNOWN_ERROR",
         };
       }
     }
@@ -137,7 +146,7 @@ class FirebaseAuthService {
    */
   async signOut() {
     try {
-      console.log('🔄 Signing out...');
+      console.log("🔄 Signing out...");
 
       // Sign out from Firebase first
       await auth().signOut();
@@ -146,13 +155,13 @@ class FirebaseAuthService {
       await GoogleSignin.revokeAccess();
       await GoogleSignin.signOut();
 
-      console.log('✅ Sign out successful - access revoked');
+      console.log("✅ Sign out successful - access revoked");
       return { success: true };
     } catch (error) {
-      console.error('❌ Sign out error:', error);
+      console.error("❌ Sign out error:", error);
       return {
         success: false,
-        error: error.message || 'Sign out failed',
+        error: error.message || "Sign out failed",
       };
     }
   }
@@ -187,22 +196,22 @@ class FirebaseAuthService {
     try {
       const user = auth().currentUser;
       if (!user) {
-        throw new Error('No user is currently signed in');
+        throw new Error("No user is currently signed in");
       }
 
       // Sign out from Google first
       await GoogleSignin.signOut();
-      
+
       // Delete the Firebase user account
       await user.delete();
 
-      console.log('✅ Account deleted successfully');
+      console.log("✅ Account deleted successfully");
       return { success: true };
     } catch (error) {
-      console.error('❌ Account deletion failed:', error);
+      console.error("❌ Account deletion failed:", error);
       return {
         success: false,
-        error: error.message || 'Account deletion failed',
+        error: error.message || "Account deletion failed",
       };
     }
   }
@@ -214,18 +223,18 @@ class FirebaseAuthService {
     try {
       const user = auth().currentUser;
       if (!user) {
-        throw new Error('No user is currently signed in');
+        throw new Error("No user is currently signed in");
       }
 
       await user.updateProfile(profile);
-      
-      console.log('✅ Profile updated successfully');
+
+      console.log("✅ Profile updated successfully");
       return { success: true };
     } catch (error) {
-      console.error('❌ Profile update failed:', error);
+      console.error("❌ Profile update failed:", error);
       return {
         success: false,
-        error: error.message || 'Profile update failed',
+        error: error.message || "Profile update failed",
       };
     }
   }
@@ -237,16 +246,16 @@ class FirebaseAuthService {
     try {
       const user = auth().currentUser;
       if (!user) {
-        throw new Error('No user is currently signed in');
+        throw new Error("No user is currently signed in");
       }
 
       const idToken = await user.getIdToken(forceRefresh);
       return { success: true, idToken };
     } catch (error) {
-      console.error('❌ Failed to get ID token:', error);
+      console.error("❌ Failed to get ID token:", error);
       return {
         success: false,
-        error: error.message || 'Failed to get ID token',
+        error: error.message || "Failed to get ID token",
       };
     }
   }

@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "990770526562",
     "project_id": "agrowise-5e376",
-    "storage_bucket": "agrowise-5e376.firebasestorage.app"
+    "storage_bucket": "agrowise-5e376.appspot.com"
   },
   "client": [
     {
@@ -13,14 +13,6 @@
         }
       },
       "oauth_client": [
-        {
-          "client_id": "990770526562-3gukbmpplfqgo8n80ud27521urutuk31.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "aggro.application",
-            "certificate_hash": "5ab3a7bf7ad42659aa5148222eb80c443e1e8df6"
-          }
-        },
         {
           "client_id": "990770526562-eop4oa0n1p3krv5f1d5526p9fa8s6n5t.apps.googleusercontent.com",
           "client_type": 1,
@@ -38,15 +30,7 @@
           }
         },
         {
-          "client_id": "990770526562-iltup72gjak34oqnbart1fp22r9st97k.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "aggro.application",
-            "certificate_hash": "d2093479c812549f4e2ecfb3f8a67f16dc962c7c"
-          }
-        },
-        {
-          "client_id": "990770526562-pflqupb4cdn44to3mmsu5ab4fvbjabb9.apps.googleusercontent.com",
+          "client_id": "990770526562-ilsmjhrc84o6c624qnvr502dmouv9ukr.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -59,16 +43,8 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "990770526562-eum8itu9du9i86l91edth0076p4eoap6.apps.googleusercontent.com",
+              "client_id": "990770526562-ilsmjhrc84o6c624qnvr502dmouv9ukr.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "990770526562-kr21jdh8lfe9u3ospc69aq101084o5j1.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "aggro.application",
-                "app_store_id": "6451444453"
-              }
             }
           ]
         }

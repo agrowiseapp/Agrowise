@@ -64,17 +64,19 @@ const ChatComponent = ({ messages, loadingSendMessage, onSend }) => {
   return (
     <View style={styles.container}>
       {/* Chat */}
-      {messages.length > 0 && (
+      {messages.length > 0 ? (
         <FlatList
           data={messages}
           renderItem={({ item }) => <RenderMessage item={item} />}
           keyExtractor={(item, index) => index.toString()}
           inverted={true}
           initialNumToRender={2}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardDismissMode="interactive"
         />
+      ) : (
+        <View style={{ flex: 1 }} />
       )}
 
       {/* Input */}
