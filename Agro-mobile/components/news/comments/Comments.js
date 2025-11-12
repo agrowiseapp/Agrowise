@@ -5,6 +5,7 @@ import {
   TextInput,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import SingleComment from "./SingleComment";
@@ -131,9 +132,10 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction }) => {
           onPress={() => {
             if (!postCommentLoading) postCommentFunction();
           }}
+          disabled={postCommentLoading}
         >
           {postCommentLoading ? (
-            <SimpleIcons name="loading1" size={22} color="gray" />
+            <ActivityIndicator size="small" color="white" />
           ) : (
             <SimpleIcons name="send" size={22} color="white" />
           )}

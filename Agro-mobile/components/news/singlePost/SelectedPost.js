@@ -2,9 +2,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   Modal,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SimpleIcons from "../../icons/SimpleIcons";
@@ -130,15 +131,19 @@ const SelectedPost = ({
           </View>
         </View>
 
-        <ScrollView
+        <KeyboardAwareScrollView
           style={styles.contentScrollView}
           contentContainerStyle={{ flexGrow: 1 }}
           ref={scrollViewRef}
+          enableOnAndroid={true}
+          enableAutomaticScroll={true}
+          extraScrollHeight={20}
+          keyboardShouldPersistTaps="handled"
         >
           {loading ? (
             <Loading />
           ) : (
-            <KeyboardAwareScrollView>
+            <>
               <PostContent data={post} setShowModal={setShowModal} />
               <View style={styles.commentsSection}>
                 <Comments
@@ -149,9 +154,9 @@ const SelectedPost = ({
                   getSpecificPostFunction={getSpecificPostFunction}
                 />
               </View>
-            </KeyboardAwareScrollView>
+            </>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </Modal>
   );

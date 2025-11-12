@@ -419,7 +419,8 @@ const GroupChatScreen = () => {
   const handleScroll = (event) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     // For inverted list, check if we're at the top (which is visually bottom)
-    const isNearBottom = contentOffset.y < 100;
+    // Use stricter threshold (20px) to avoid auto-scrolling when user is reading older messages
+    const isNearBottom = contentOffset.y < 20;
     setIsAtBottom(isNearBottom);
 
     // When user scrolls to bottom and there are pending messages, add them

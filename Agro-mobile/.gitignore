@@ -43,4 +43,5 @@ yarn-debug.log*
 yarn-error.log*
 
 # Extra
- stage/
+
+stage/
