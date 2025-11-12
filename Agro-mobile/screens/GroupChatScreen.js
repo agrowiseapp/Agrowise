@@ -200,48 +200,30 @@ const GroupChatScreen = () => {
 
   const fetchMessages = async (userInfo = null) => {
     try {
-      console.log("📨 GroupChat - Starting fetchMessages");
-      setLoading(true);
-      let userToken = await AsyncStorage.getItem("userToken");
-      console.log("🔑 GroupChat - userToken exists:", !!userToken);
+      // ✅ Only show loading spinner on first load
+      if (isFirstLoad) setLoading(true);
 
+      const userToken = await AsyncStorage.getItem("userToken");
       if (!userToken) {
         console.log("❌ GroupChat - No user token found");
-        setLoading(false);
+        if (isFirstLoad) setLoading(false);
         return;
       }
 
       const currentUserInfo = userInfo || currentUser;
-      console.log(
-        "👤 GroupChat - Using userInfo:",
-        currentUserInfo ? "PROVIDED" : "FROM_STATE"
-      );
-      console.log("👤 GroupChat - Current user ID:", currentUserInfo?.userId);
-
       console.log("🌐 GroupChat - Calling getRecentGroupMessagesApi...");
       const response = await getRecentGroupMessagesApi(
         "apiUrl",
         userToken,
         150
       );
-      console.log("🌐 GroupChat - API response status:", response.status);
-
       const data = await response.json();
-      console.log("📊 GroupChat - Response data:", {
-        resultCode: data.resultCode,
-        hasMessages: !!data.response?.messages,
-        messageCount: data.response?.messages?.length || 0,
-      });
 
       if (data.resultCode === 0 && data.response?.messages) {
         console.log("✅ GroupChat - Messages received successfully");
-        // Transform backend data to match frontend format
-        console.log(
-          "👤 GroupChat - Processing messages for user ID:",
-          currentUserInfo?.userId
-        );
+
+        // Transform messages
         const transformedMessages = data.response.messages.map((msg) => {
-          // Handle ObjectId comparison - convert both to strings and compare
           const messageUserId =
             typeof msg.userId === "object" && msg.userId !== null
               ? msg.userId._id ||
@@ -250,74 +232,60 @@ const GroupChatScreen = () => {
               : String(msg.userId);
           const currentUserId = String(currentUserInfo?.userId);
           const isCurrentUser = messageUserId === currentUserId;
-          console.log(
-            `Message from ${msg.authorName}, userId: ${messageUserId}, currentUserId: ${currentUserId}, isCurrentUser: ${isCurrentUser}`
-          );
           return {
             id: msg._id,
             text: msg.message,
             username: msg.authorName,
             date: msg.date,
             userId: msg.userId,
-            isCurrentUser: isCurrentUser,
-            isReported: msg.isReported || false, // Add reported status
+            isCurrentUser,
+            isReported: msg.isReported || false,
           };
         });
 
-        // Sort messages by date (newest first for inverted FlatList)
+        // Sort newest → oldest for inverted list
         transformedMessages.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        console.log("📝 GroupChat - Setting messages in state...");
-
         if (isFirstLoad) {
-          // Initial load - load all messages
+          // ✅ Initial load — set everything
           console.log("📍 GroupChat - Initial load, loading all messages");
           setMessages(transformedMessages);
           setIsFirstLoad(false);
 
-          // Track the latest message timestamp
           if (transformedMessages.length > 0) {
-            latestMessageTimestamp.current = new Date(transformedMessages[0].date);
-            console.log("📅 Latest message timestamp set:", latestMessageTimestamp.current);
+            latestMessageTimestamp.current = new Date(
+              transformedMessages[0].date
+            );
           }
         } else {
-          // Subsequent loads - only add NEW messages (newer than what we have)
+          // ✅ Only add messages newer than our latest timestamp
           const currentLatest = latestMessageTimestamp.current;
-
           const newMessages = transformedMessages.filter((msg) => {
             const msgDate = new Date(msg.date);
             return currentLatest ? msgDate > currentLatest : false;
           });
 
           if (newMessages.length > 0) {
-            console.log(`🆕 GroupChat - ${newMessages.length} truly new messages detected`);
-            console.log("📅 New messages are newer than:", currentLatest);
-
-            // Update latest timestamp
+            console.log(`🆕 GroupChat - ${newMessages.length} new messages`);
             latestMessageTimestamp.current = new Date(newMessages[0].date);
 
-            // If user is at bottom, auto-add new messages
             if (isAtBottom) {
-              console.log("📍 GroupChat - User at bottom, prepending new messages");
-              // Add any pending messages first, then the new ones
-              const allNewMessages = [...newMessages, ...pendingNewMessages.current];
-              pendingNewMessages.current = [];
-              setMessages((prevMessages) => [...allNewMessages, ...prevMessages]);
+              console.log("📍 User at bottom — adding new messages");
+              setMessages((prev) => [...newMessages, ...prev]);
             } else {
-              // User scrolled up, store messages in pending array
-              console.log("📍 GroupChat - User scrolled up, storing messages in pending");
-              pendingNewMessages.current = [...newMessages, ...pendingNewMessages.current];
+              console.log(
+                "📍 User reading old messages — storing new messages"
+              );
+              pendingNewMessages.current = [
+                ...newMessages,
+                ...pendingNewMessages.current,
+              ];
               setNewMessageCount(pendingNewMessages.current.length);
             }
           } else {
-            console.log("✅ GroupChat - No new messages, no update needed");
+            console.log("✅ No new messages — skipping update");
           }
         }
-
-        console.log(
-          "✅ GroupChat - Current message count:",
-          messages.length
-        );
       } else {
         console.log(
           "❌ GroupChat - No messages found or API error:",
@@ -329,8 +297,8 @@ const GroupChatScreen = () => {
       console.log("❌ GroupChat - Error fetching messages:", error);
       Alert.alert("Σφάλμα", "Δεν μπόρεσαν να φορτωθούν τα μηνύματα");
     } finally {
-      console.log("🏁 GroupChat - fetchMessages finally block");
-      setLoading(false);
+      // ✅ Prevent flicker by only toggling off on first load
+      if (isFirstLoad) setLoading(false);
       setInitializing(false);
     }
   };
@@ -425,7 +393,9 @@ const GroupChatScreen = () => {
 
     // When user scrolls to bottom and there are pending messages, add them
     if (isNearBottom && pendingNewMessages.current.length > 0) {
-      console.log("📍 GroupChat - User scrolled to bottom, adding pending messages");
+      console.log(
+        "📍 GroupChat - User scrolled to bottom, adding pending messages"
+      );
       const messagesToAdd = [...pendingNewMessages.current];
       pendingNewMessages.current = [];
       setNewMessageCount(0);
@@ -482,9 +452,13 @@ const GroupChatScreen = () => {
     }
 
     // Check if message is from this week (within last 7 days)
-    const daysDiff = Math.floor((today.getTime() - messageDay.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.floor(
+      (today.getTime() - messageDay.getTime()) / (1000 * 60 * 60 * 24)
+    );
     if (daysDiff < 7) {
-      const weekday = messageDate.toLocaleDateString("el-GR", { weekday: "long" });
+      const weekday = messageDate.toLocaleDateString("el-GR", {
+        weekday: "long",
+      });
       return `${weekday} ${time}`;
     }
 
@@ -520,7 +494,9 @@ const GroupChatScreen = () => {
     }
 
     // Check if message is from this week
-    const daysDiff = Math.floor((today.getTime() - messageDay.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.floor(
+      (today.getTime() - messageDay.getTime()) / (1000 * 60 * 60 * 24)
+    );
     if (daysDiff < 7) {
       return messageDate.toLocaleDateString("el-GR", { weekday: "long" });
     }
@@ -757,10 +733,13 @@ const GroupChatScreen = () => {
                 fontSize: 16,
                 color: item.isCurrentUser ? "white" : colors.Text.primary,
                 lineHeight: 20,
-                fontStyle: item.isReported && !item.isCurrentUser ? "italic" : "normal",
+                fontStyle:
+                  item.isReported && !item.isCurrentUser ? "italic" : "normal",
               }}
             >
-              {item.isReported && !item.isCurrentUser ? "Προσωρινά μη διαθέσιμο" : item.text}
+              {item.isReported && !item.isCurrentUser
+                ? "Προσωρινά μη διαθέσιμο"
+                : item.text}
             </Text>
             <Text
               style={{
@@ -1138,6 +1117,10 @@ const GroupChatScreen = () => {
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 1,
+            autoscrollToTopThreshold: 20,
+          }}
         />
 
         {/* New Messages Banner */}

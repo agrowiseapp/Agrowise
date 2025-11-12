@@ -99,65 +99,85 @@ const SelectedPost = ({
         setShowModal(!showModal);
       }}
     >
-      <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: colors.Main[600] }]}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
-        <View
-          style={[
-            styles.headerContainer,
-            { backgroundColor: colors.Main[600] },
-          ]}
+        <SafeAreaView
+          style={[styles.safeArea, { backgroundColor: colors.Main[600] }]}
         >
-          <TouchableOpacity onPress={closeModal} style={styles.backButton}>
-            <SimpleIcons name="arrow-back" size={36} color="white" />
-            <Text style={styles.backButtonText}>Πίσω</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.titleText}>
-            {post?.title !== undefined && post.title}
-          </Text>
-
           <View
             style={[
-              styles.dateContainer,
-              { backgroundColor: colors.Second[500] },
+              styles.headerContainer,
+              { backgroundColor: colors.Main[600] },
             ]}
           >
-            <Text style={styles.dateText}>
-              {post?.publishedAt !== null && (
-                <DateSinceNow date={post?.publishedAt} />
-              )}
-            </Text>
-          </View>
-        </View>
+            <TouchableOpacity onPress={closeModal} style={styles.backButton}>
+              <SimpleIcons name="arrow-back" size={36} color="white" />
+              <Text style={styles.backButtonText}>Πίσω</Text>
+            </TouchableOpacity>
 
-        <KeyboardAwareScrollView
-          style={styles.contentScrollView}
-          contentContainerStyle={{ flexGrow: 1 }}
-          ref={scrollViewRef}
-          enableOnAndroid={true}
-          enableAutomaticScroll={true}
-          extraScrollHeight={20}
-          keyboardShouldPersistTaps="handled"
-        >
-          {loading ? (
-            <Loading />
-          ) : (
-            <>
-              <PostContent data={post} setShowModal={setShowModal} />
-              <View style={styles.commentsSection}>
-                <Comments
-                  list={commentsArray}
-                  setList={setcommentsArray}
-                  date={post?.publishedAt}
-                  postId={id}
-                  getSpecificPostFunction={getSpecificPostFunction}
-                />
-              </View>
-            </>
+            <Text style={styles.titleText}>
+              {post?.title !== undefined && post.title}
+            </Text>
+
+            <View
+              style={[
+                styles.dateContainer,
+                { backgroundColor: colors.Second[500] },
+              ]}
+            >
+              <Text style={styles.dateText}>
+                {post?.publishedAt !== null && (
+                  <DateSinceNow date={post?.publishedAt} />
+                )}
+              </Text>
+            </View>
+          </View>
+
+          <KeyboardAwareScrollView
+            style={styles.contentScrollView}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            ref={scrollViewRef}
+            enableOnAndroid={true}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={true}
+          >
+            {loading ? (
+              <Loading />
+            ) : (
+              <>
+                <PostContent data={post} setShowModal={setShowModal} />
+                <View style={styles.commentsSection}>
+                  <Comments
+                    list={commentsArray}
+                    setList={setcommentsArray}
+                    date={post?.publishedAt}
+                    postId={id}
+                    getSpecificPostFunction={getSpecificPostFunction}
+                    scrollViewRef={scrollViewRef}
+                    showInput={false}
+                  />
+                </View>
+              </>
+            )}
+          </KeyboardAwareScrollView>
+
+          {/* Fixed Input at Bottom */}
+          {!loading && (
+            <Comments
+              list={[]}
+              setList={setcommentsArray}
+              date={post?.publishedAt}
+              postId={id}
+              getSpecificPostFunction={getSpecificPostFunction}
+              scrollViewRef={scrollViewRef}
+              showInputOnly={true}
+            />
           )}
-        </KeyboardAwareScrollView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -221,7 +241,7 @@ const styles = StyleSheet.create({
   },
   commentsSection: {
     marginTop: 40,
-    marginBottom: 40,
+    marginBottom: 20,
     paddingHorizontal: 4,
   },
 });

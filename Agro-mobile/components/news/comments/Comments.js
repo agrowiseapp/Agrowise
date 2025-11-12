@@ -16,7 +16,7 @@ import Loading from "../../structure/Loading";
 import SimpleIcons from "../../icons/SimpleIcons";
 import checkForBadWordsAndAlert from "../../utils/checkForBadWordsAndAlert";
 
-const Comments = ({ list, setList, date, postId, getSpecificPostFunction }) => {
+const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scrollViewRef, showInput = true, showInputOnly = false }) => {
   //1) Data
   const [comment, setcomment] = useState(null);
   const [loading, setloading] = useState(false);
@@ -82,6 +82,41 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction }) => {
     }
   };
 
+  // If only showing input (fixed at bottom)
+  if (showInputOnly) {
+    return (
+      <View style={styles.fixedInputContainer}>
+        <TextInput
+          style={styles.textInput}
+          onChangeText={setcomment}
+          value={comment}
+          placeholder="Γράψε ένα σχόλιο.."
+          placeholderTextColor="gray"
+        />
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor: !postCommentLoading
+                ? colors.Main[600]
+                : colors.Third[500],
+            },
+          ]}
+          onPress={() => {
+            if (!postCommentLoading) postCommentFunction();
+          }}
+          disabled={postCommentLoading}
+        >
+          {postCommentLoading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <SimpleIcons name="send" size={22} color="white" />
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Comments header and button */}
@@ -111,36 +146,38 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction }) => {
         </View>
       )}
 
-      {/* Comment Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          onChangeText={setcomment}
-          value={comment}
-          placeholder="Γράψε ένα σχόλιο.."
-          placeholderTextColor="gray"
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor: !postCommentLoading
-                ? colors.Main[600]
-                : colors.Third[500],
-            },
-          ]}
-          onPress={() => {
-            if (!postCommentLoading) postCommentFunction();
-          }}
-          disabled={postCommentLoading}
-        >
-          {postCommentLoading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <SimpleIcons name="send" size={22} color="white" />
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Comment Input - Only show if showInput is true */}
+      {showInput && (
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            onChangeText={setcomment}
+            value={comment}
+            placeholder="Γράψε ένα σχόλιο.."
+            placeholderTextColor="gray"
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: !postCommentLoading
+                  ? colors.Main[600]
+                  : colors.Third[500],
+              },
+            ]}
+            onPress={() => {
+              if (!postCommentLoading) postCommentFunction();
+            }}
+            disabled={postCommentLoading}
+          >
+            {postCommentLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <SimpleIcons name="send" size={22} color="white" />
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -167,6 +204,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+  },
+  fixedInputContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "white",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
   },
   textInput: {
     backgroundColor: "#e5e7eb", // bg-gray-200
