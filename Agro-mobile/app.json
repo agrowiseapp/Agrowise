@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "25",
+      "buildNumber": "26",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/Logo/icon.png",
       "infoPlist": {
@@ -47,6 +47,7 @@
     },
     "owner": "agrowiseapp",
     "plugins": [
+      "./plugins/withFirebasePodfile.js",
       [
         "expo-build-properties",
         {
@@ -59,12 +60,7 @@
           "ios": {
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
-            "newArchEnabled": true,
-            "extraPodfileProperties": {
-              "CLANG_WARN_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "NO",
-              "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES",
-              "CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER": "NO"
-            }
+            "newArchEnabled": true
           }
         }
       ],
