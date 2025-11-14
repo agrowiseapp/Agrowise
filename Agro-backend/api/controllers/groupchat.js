@@ -212,6 +212,27 @@ exports.send_message = async (req, res, next) => {
       createdAt: savedMessage.createdAt,
     };
 
+    // Emit real-time message via Socket.IO to group chat
+    try {
+      const io = req.app.get('io');
+      if (io && io.emitNewGroupMessage) {
+        const socketMessage = {
+          id: savedMessage._id,
+          text: savedMessage.message,
+          username: savedMessage.authorName,
+          date: savedMessage.date,
+          userId: savedMessage.userId,
+          // isCurrentUser will be determined by each client based on their userId
+          isReported: false,
+        };
+        io.emitNewGroupMessage(socketMessage);
+        console.log(`🔌 Real-time group message emitted`);
+      }
+    } catch (socketError) {
+      console.log("⚠️ Socket emission failed (non-critical):", socketError.message);
+      // Don't fail the request if socket emission fails
+    }
+
     const response = createResponse(
       "success",
       0,

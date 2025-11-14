@@ -16,23 +16,43 @@ import Loading from "../../structure/Loading";
 import SimpleIcons from "../../icons/SimpleIcons";
 import checkForBadWordsAndAlert from "../../utils/checkForBadWordsAndAlert";
 
-const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scrollViewRef, showInput = true, showInputOnly = false }) => {
-  //1) Data
-  const [comment, setcomment] = useState(null);
+const Comments = ({
+  list,
+  setList,
+  date,
+  postId,
+  getSpecificPostFunction,
+  scrollViewRef,
+  showInput = true,
+  showInputOnly = false,
+  useFakeInput = false, // New prop for fake input mode
+  onOpenInput, // Callback to open modal
+  comment, // External comment state (for modal)
+  setcomment: setCommentExternal, // External comment setter
+  postCommentLoading: externalLoading, // External loading state
+  onSendComment, // External send handler
+}) => {
+  //1) Data - Use external state if provided, otherwise internal
+  const [internalComment, setInternalComment] = useState(null);
   const [loading, setloading] = useState(false);
-  const [postCommentLoading, setpostCommentLoading] = useState(false);
+  const [internalPostCommentLoading, setInternalPostCommentLoading] = useState(false);
+
+  // Use external or internal state
+  const commentValue = useFakeInput ? comment : internalComment;
+  const setCommentValue = useFakeInput ? setCommentExternal : setInternalComment;
+  const postCommentLoading = useFakeInput ? externalLoading : internalPostCommentLoading;
 
   //2) UseEffect
 
   //3) Functions
 
   const postCommentFunction = async () => {
-    if (comment == null || comment == "") {
+    if (commentValue == null || commentValue == "") {
       return;
     }
     try {
       // Filter the comment for bad words
-      const hasBadWords = checkForBadWordsAndAlert(comment);
+      const hasBadWords = checkForBadWordsAndAlert(commentValue);
 
       if (hasBadWords) {
         // The comment contains bad words, handle the situation accordingly
@@ -41,7 +61,7 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scroll
         return;
       }
 
-      setpostCommentLoading(true);
+      setInternalPostCommentLoading(true);
 
       let userToken = await AsyncStorage.getItem("userToken");
       let userInfo = await AsyncStorage.getItem("userInfo");
@@ -62,7 +82,7 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scroll
         postId: postId,
         authorId: parsedUserInfo.userId,
         author: fullName,
-        content: comment,
+        content: commentValue,
         isMine: true,
         authorAvatar: parsedUserInfo.avatar,
       };
@@ -71,8 +91,8 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scroll
       const data = await response.json();
 
       if (data?.resultCode == 0) {
-        setcomment(null);
-        setpostCommentLoading(false);
+        setCommentValue(null);
+        setInternalPostCommentLoading(false);
         getSpecificPostFunction();
         await setloading(false);
       }
@@ -84,12 +104,33 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scroll
 
   // If only showing input (fixed at bottom)
   if (showInputOnly) {
+    // Fake input mode - just a touchable that opens modal
+    if (useFakeInput) {
+      return (
+        <TouchableOpacity
+          onPress={onOpenInput}
+          activeOpacity={0.7}
+          style={styles.fixedInputContainer}
+        >
+          <View style={styles.fakeTextInput}>
+            <Text style={styles.placeholderText}>
+              Γράψε ένα σχόλιο..
+            </Text>
+          </View>
+          <View style={styles.fakeSendButton}>
+            <SimpleIcons name="send" size={20} color={colors.Text?.secondary || "#666"} />
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // Real input mode (original behavior)
     return (
       <View style={styles.fixedInputContainer}>
         <TextInput
           style={styles.textInput}
-          onChangeText={setcomment}
-          value={comment}
+          onChangeText={setCommentValue}
+          value={commentValue}
           placeholder="Γράψε ένα σχόλιο.."
           placeholderTextColor="gray"
         />
@@ -151,8 +192,8 @@ const Comments = ({ list, setList, date, postId, getSpecificPostFunction, scroll
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.textInput}
-            onChangeText={setcomment}
-            value={comment}
+            onChangeText={setCommentValue}
+            value={commentValue}
             placeholder="Γράψε ένα σχόλιο.."
             placeholderTextColor="gray"
           />
@@ -207,13 +248,14 @@ const styles = StyleSheet.create({
   },
   fixedInputContainer: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     backgroundColor: "white",
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: colors.Border?.light || "#e5e7eb",
+    width: "100%",
   },
   textInput: {
     backgroundColor: "#e5e7eb", // bg-gray-200
@@ -229,6 +271,29 @@ const styles = StyleSheet.create({
     flex: 0,
     justifyContent: "center",
     alignItems: "center",
+  },
+  fakeTextInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.Border?.light || "#e5e7eb",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.Background?.primary || "#f9fafb",
+    marginRight: 8,
+    justifyContent: "center",
+  },
+  placeholderText: {
+    color: colors.Text?.secondary || "#666",
+    fontSize: 16,
+  },
+  fakeSendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.Border?.light || "#e5e7eb",
   },
 });
 

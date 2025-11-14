@@ -617,6 +617,13 @@ const LoginScreen = () => {
   const checkSubscriptionWithRetry = async (hookIsProMember) => {
     const performCheck = async () => {
       try {
+        // 🧪 Check if we're in development mode (bypassing payments)
+        const { shouldBypassPayments } = require("../config/development");
+        if (shouldBypassPayments()) {
+          console.log("🧪 DEVELOPMENT MODE: Bypassing RevenueCat check, returning mock subscription");
+          return { success: true, isProMember: true, usedFallback: false };
+        }
+
         console.log("🔄 Fetching fresh RevenueCat subscription status...");
         const Purchases = require("react-native-purchases").default;
         const freshCustomerInfo = await Purchases.getCustomerInfo();

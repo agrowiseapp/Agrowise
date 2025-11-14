@@ -8,15 +8,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import ScreenTitle from "../components/structure/ScreenTitle";
 import Posts from "../components/news/Posts";
 import { SearchBar } from "@rneui/themed";
 import Loading from "../components/structure/Loading";
-import {
-  createAnimatableComponent,
-  View as AnimatableView,
-} from "react-native-animatable";
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import colors from "../assets/Theme/colors";
@@ -27,12 +23,8 @@ import useRevenueCat from "../hooks/useRevenueCat";
 import CheckIsPro from "../components/utils/CheckIsPro";
 import { getPostsApi } from "../apis/PostsApi";
 
-const AnimatedView = createAnimatableComponent(AnimatableView);
-
 const NewsScreen = ({ route }) => {
   // 1) Data
-  const animatedViewRef = useRef(null);
-  const animatedPostsRefs = useRef([]);
   const navigation = useNavigation();
   const [filterText, setfilterText] = useState(null);
   const [posts, setposts] = useState(null);
@@ -94,7 +86,6 @@ const NewsScreen = ({ route }) => {
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
       try {
-        animateOnFocus();
         if (firstTime) {
           MembershipCheckFunction();
           getPostsFunction();
@@ -164,17 +155,6 @@ const NewsScreen = ({ route }) => {
     } catch (error) {
       console.log("Error: ", error);
     }
-  };
-
-  const animateOnFocus = () => {
-    if (animatedViewRef.current) {
-      animatedViewRef.current.animate("zoomIn", 400);
-    }
-    animatedPostsRefs.current.forEach((ref) => {
-      if (ref) {
-        ref.animate("bounceInUp", 1500);
-      }
-    });
   };
 
   const getPostsFunction = async () => {
@@ -312,7 +292,7 @@ const NewsScreen = ({ route }) => {
 
   return (
     <>
-      <AnimatedView ref={animatedViewRef} style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         <SafeAreaView style={styles.safeArea}>
           {/* Header */}
           <View style={styles.header}>
@@ -473,20 +453,13 @@ const NewsScreen = ({ route }) => {
 
                     {trialPeriodContent?.map((e, index) => {
                       return (
-                        <AnimatedView
-                          ref={(ref) =>
-                            (animatedPostsRefs.current[index] = ref)
-                          }
-                          key={index + "Posts"}
-                          animation="bounceInUp"
-                          duration={1500}
-                        >
+                        <View key={index + "Posts"}>
                           <TrialPosts
                             data={e}
                             index={index}
                             onCommentPosted={handleCommentPosted}
                           />
-                        </AnimatedView>
+                        </View>
                       );
                     })}
                   </>
@@ -495,20 +468,13 @@ const NewsScreen = ({ route }) => {
                     {filteredPosts !== null &&
                       filteredPosts?.map((e, index) => {
                         return (
-                          <AnimatedView
-                            ref={(ref) =>
-                              (animatedPostsRefs.current[index] = ref)
-                            }
-                            key={index + "Posts"}
-                            animation="bounceInUp"
-                            duration={1500}
-                          >
+                          <View key={index + "Posts"}>
                             <Posts
                               data={e}
                               index={index}
                               onCommentPosted={handleCommentPosted}
                             />
-                          </AnimatedView>
+                          </View>
                         );
                       })}
                   </>
@@ -519,7 +485,7 @@ const NewsScreen = ({ route }) => {
             <Loading />
           )}
         </SafeAreaView>
-      </AnimatedView>
+      </View>
     </>
   );
 };

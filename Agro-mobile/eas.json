@@ -29,7 +29,7 @@
       "node": "20.19.4",
       "prebuildCommand": "npx expo prebuild --clean",
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "ios": {
         "resourceClass": "m-medium"

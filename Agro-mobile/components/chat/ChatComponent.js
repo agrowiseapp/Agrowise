@@ -2,32 +2,16 @@ import {
   FlatList,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import SimpleIcons from "../icons/SimpleIcons";
 import colors from "../../assets/Theme/colors";
 import DateSinceNow from "../utils/DateSinceNow";
 
-const ChatComponent = ({ messages, loadingSendMessage, onSend }) => {
-  //1) Data
-  const [inputText, setInputText] = useState("");
-
-  // 2) UseEffects
-  useEffect(() => {
-    return;
-  }, []);
-
-  // 3) Functions
-  const sendMessage = async () => {
-    if (inputText == "") return;
-    onSend(inputText);
-    setInputText("");
-  };
-
-  // 4) Layout
+const ChatComponent = ({ messages, onOpenInput }) => {
+  // Layout
   const RenderMessage = ({ item }) => {
     if (!item) {
       return null;
@@ -71,7 +55,7 @@ const ChatComponent = ({ messages, loadingSendMessage, onSend }) => {
           keyExtractor={(item, index) => index.toString()}
           inverted={true}
           initialNumToRender={2}
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 10, paddingBottom: 10 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
         />
@@ -79,32 +63,19 @@ const ChatComponent = ({ messages, loadingSendMessage, onSend }) => {
         <View style={{ flex: 1 }} />
       )}
 
-      {/* Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Γράψτε ένα μήνυμα.."
-          value={inputText}
-          onChangeText={(text) => setInputText(text)}
-        />
-        <TouchableOpacity
-          onPress={sendMessage}
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor: loadingSendMessage
-                ? colors.Main[300] // A lighter color for loading state
-                : colors.Main[800],
-            },
-          ]}
-        >
-          {loadingSendMessage ? (
-            <SimpleIcons name="loading1" size={22} color="white" />
-          ) : (
-            <SimpleIcons name="send" size={22} color="white" />
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Fake Input - Opens Modal */}
+      <TouchableOpacity
+        onPress={onOpenInput}
+        activeOpacity={0.7}
+        style={styles.inputContainer}
+      >
+        <View style={styles.input}>
+          <Text style={styles.placeholderText}>Γράψτε ένα μήνυμα..</Text>
+        </View>
+        <View style={styles.sendButton}>
+          <SimpleIcons name="send" size={20} color={colors.Text?.secondary || "#666"} />
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -112,8 +83,6 @@ const ChatComponent = ({ messages, loadingSendMessage, onSend }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 10,
-    paddingBottom: 10,
   },
   myMessageWrapper: {
     alignSelf: "flex-end",
@@ -157,26 +126,36 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: "lightgray",
-    paddingTop: 10,
+    borderTopColor: colors.Border?.light || "#e5e7eb",
+    backgroundColor: "white",
   },
   input: {
     flex: 1,
-    height: 40,
     borderWidth: 1,
-    borderColor: "#C0C0C0",
+    borderColor: colors.Border?.light || "#e5e7eb",
     borderRadius: 20,
-    paddingHorizontal: 10,
-    marginRight: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.Background?.primary || "#f9fafb",
+    marginRight: 8,
+    justifyContent: "center",
+  },
+  placeholderText: {
+    color: colors.Text?.secondary || "#666",
+    fontSize: 16,
   },
   sendButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 9999, // Corresponds to rounded-full
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.Border?.light || "#e5e7eb",
   },
 });
 

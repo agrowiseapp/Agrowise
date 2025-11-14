@@ -3,20 +3,13 @@ import {
   View,
   TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useEffect, useRef, useState } from "react";
-import { GiftedChat } from "react-native-gifted-chat";
 import colors from "../assets/Theme/colors";
 import ScreenTitle from "../components/structure/ScreenTitle";
 import SimpleIcons from "../components/icons/SimpleIcons";
-import {
-  createAnimatableComponent,
-  View as AnimatableView,
-} from "react-native-animatable";
 import LoadingComponent from "../components/structure/LoadingComponent";
 import {
   getSpecificChatApi,
@@ -30,8 +23,12 @@ import { useNavigation } from "@react-navigation/native";
 import { UserInfoApi } from "../apis/LoginApi";
 import SubBottomScreen from "../components/subscriptions/SubBottomScreen";
 import useRevenueCat from "../hooks/useRevenueCat";
+import socketService from "../services/socketService";
+import { getBootstrapUrl } from "../apis/settings/bootstrapUrl";
+import ChatInputModal from "../components/chat/ChatInputModal";
 
-const AnimatedView = createAnimatableComponent(AnimatableView);
+// Get backend URL from existing bootstrap configuration
+const BACKEND_URL = getBootstrapUrl();
 
 const ChatScreen = ({ route }) => {
   // 1) Data
@@ -39,7 +36,8 @@ const ChatScreen = ({ route }) => {
   const [loading, setLoading] = useState(false);
   const [loadingSendMessage, setLoadingSendMessage] = useState(false);
   const [chatExists, setchatExists] = useState(false);
-  const [intervalID, setintervalID] = useState(null);
+  const [inputModalVisible, setInputModalVisible] = useState(false);
+  const [inputText, setInputText] = useState("");
   const intervalRef = useRef(null);
   const navigation = useNavigation();
   const [isProMember, setisProMember] = useState(false);
@@ -48,9 +46,18 @@ const ChatScreen = ({ route }) => {
   // 2) UseEffect
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", onLandExcecute);
-    const unsubscribe2 = navigation.addListener("blur", () => {
+    const unsubscribe2 = navigation.addListener("blur", async () => {
+      console.log("🔌 ChatScreen blur - cleaning up socket listeners");
+
+      // Leave chat room and remove listeners
+      const chatID = await AsyncStorage.getItem("chatId");
+      if (chatID) {
+        socketService.leaveChat(chatID);
+      }
+      socketService.offNewMessage();
+
+      // Clear interval (kept for fallback compatibility)
       clearInterval(intervalRef.current);
-      console.log("UNSUBSCRIBE");
     });
 
     return () => {
@@ -65,19 +72,33 @@ const ChatScreen = ({ route }) => {
     try {
       let chatExists = await getChatInfo();
       if (chatExists) {
+        // Get chat ID from storage
+        let chatID = await AsyncStorage.getItem("chatId");
+
+        // Fetch initial messages
         getSpecificChatFunction();
         readChatFunction();
 
-        const intervalId = setInterval(() => {
-          getSpecificChatFunction();
-          console.log("called fetched the messages");
-        }, 15 * 1000);
-        intervalRef.current = intervalId;
-        setchatExists(true);
+        // Connect to Socket.IO and join chat room
+        const connected = await socketService.connect(BACKEND_URL);
+        if (connected && chatID) {
+          socketService.joinChat(chatID);
 
-        return () => {
-          clearInterval(intervalRef.current);
-        };
+          // Listen for new messages via Socket.IO
+          socketService.onNewMessage((newMessage) => {
+            console.log("🔔 Received real-time message:", newMessage);
+            setMessages((prevMessages) => {
+              // Check if message already exists to avoid duplicates
+              const exists = prevMessages.some(msg => msg._id === newMessage._id);
+              if (!exists) {
+                return [newMessage, ...prevMessages];
+              }
+              return prevMessages;
+            });
+          });
+        }
+
+        setchatExists(true);
       } else {
         setchatExists(false);
       }
@@ -87,11 +108,33 @@ const ChatScreen = ({ route }) => {
   };
 
   const MembershipCheckFunction = async () => {
-    let MembershipCheck = await AsyncStorage.getItem("ProMembership");
-    if (MembershipCheck == "true") {
-      setisProMember(true);
-    } else {
-      setisProMember(false);
+    try {
+      // 🧪 Check if we're in development mode (bypassing payments)
+      const { shouldBypassPayments } = require("../config/development");
+      if (shouldBypassPayments()) {
+        console.log("🧪 DEVELOPMENT MODE: Bypassing RevenueCat check, using mock subscription");
+        await AsyncStorage.setItem("ProMembership", "true");
+        setisProMember(true);
+        return;
+      }
+
+      // Get fresh subscription status from RevenueCat
+      const Purchases = require("react-native-purchases").default;
+      const customerInfo = await Purchases.getCustomerInfo();
+
+      const activeSubscriptions = customerInfo.activeSubscriptions || [];
+      const freshIsProMember = activeSubscriptions.length > 0;
+
+      // Update AsyncStorage with fresh data
+      await AsyncStorage.setItem("ProMembership", freshIsProMember.toString());
+      setisProMember(freshIsProMember);
+
+      console.log("✅ Fresh subscription status:", freshIsProMember);
+    } catch (error) {
+      console.log("Error checking RevenueCat subscription:", error);
+      // Fallback to cached value if RevenueCat check fails
+      let MembershipCheck = await AsyncStorage.getItem("ProMembership");
+      setisProMember(MembershipCheck === "true");
     }
   };
 
@@ -172,7 +215,7 @@ const ChatScreen = ({ route }) => {
       }
     } catch (error) {
       console.log("getSpecificChatFunction :", error);
-      clearInterval(intervalID);
+      clearInterval(intervalRef.current);
       Alert.alert(
         "Πρόβλημα σύνδεσης.",
         "Ο Λογαριασμός σας ήταν πολύ ώρα σε αδράνεια. Παρακαλώ συνδεθείτε ξανα.",
@@ -234,18 +277,11 @@ const ChatScreen = ({ route }) => {
       );
       const data = await response.json();
       if (data?.resultCode == 0) {
-        let localMessage = {
-          _id: data.response.id,
-          createdAt: data.response.publishedAt,
-          text: bodyObject.text,
-          user: {
-            _id: 1,
-            name: bodyObject.author,
-          },
-        };
-        setMessages((previousMessages) =>
-          GiftedChat.append(previousMessages, localMessage)
-        );
+        // Message will be received via Socket.IO real-time
+        // No need to append locally - socket will handle it
+        setInputText(""); // Clear input
+        setInputModalVisible(false); // Close modal
+        console.log("✅ Message sent successfully, waiting for socket event");
       }
       setLoadingSendMessage(false);
     } catch (error) {
@@ -300,17 +336,12 @@ const ChatScreen = ({ route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeAreaView}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        style={{ flex: 1 }}
-      >
-        <AnimatedView style={styles.animatedView}>
-          {openSubBottomScreen ? (
-            <SubBottomScreen setopenSubBottomScreen={setopenSubBottomScreen} />
-          ) : (
-            <View style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safeAreaView} edges={["top", "left", "right"]}>
+      <View style={styles.animatedView}>
+        {openSubBottomScreen ? (
+          <SubBottomScreen setopenSubBottomScreen={setopenSubBottomScreen} />
+        ) : (
+          <View style={{ flex: 1 }}>
             <View style={styles.headerContainer}>
               <ScreenTitle
                 title="Επικοινωνία"
@@ -328,8 +359,17 @@ const ChatScreen = ({ route }) => {
                 <>
                   <ChatComponent
                     messages={messages}
-                    loadingSendMessage={loadingSendMessage}
-                    onSend={onSend}
+                    onOpenInput={() => setInputModalVisible(true)}
+                  />
+
+                  {/* Chat Input Modal */}
+                  <ChatInputModal
+                    visible={inputModalVisible}
+                    onClose={() => setInputModalVisible(false)}
+                    inputText={inputText}
+                    onChangeText={setInputText}
+                    onSend={() => onSend(inputText)}
+                    sending={loadingSendMessage}
                   />
                 </>
               ) : (
@@ -371,8 +411,7 @@ const ChatScreen = ({ route }) => {
             </View>
           </View>
         )}
-      </AnimatedView>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };

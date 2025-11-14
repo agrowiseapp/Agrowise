@@ -4,21 +4,24 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SimpleIcons from "../../icons/SimpleIcons";
 import Comments from "../comments/Comments";
 import PostContent from "./PostContent";
 import React, { useEffect, useRef, useState } from "react";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import colors, { Main } from "../../../assets/Theme/colors";
 import AsyncStorage from "../../../utils/AsyncStorage";
 import { getSpecificPostApi } from "../../../apis/PostsApi";
 import { getCommentsNotificationApi } from "../../../apis/NotificationsApi";
 import Loading from "../../structure/Loading";
 import DateSinceNow from "../../utils/DateSinceNow";
+import ChatInputModal from "../../chat/ChatInputModal";
+import { postNewCommentApi } from "../../../apis/CommentsApi";
+import checkForBadWordsAndAlert from "../../utils/checkForBadWordsAndAlert";
 
 const SelectedPost = ({
   id,
@@ -32,6 +35,9 @@ const SelectedPost = ({
   const scrollViewRef = useRef(null);
   const [scrollToBottom, setScrollToBottom] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [inputModalVisible, setInputModalVisible] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
 
   useEffect(() => {
     if (showModal) {
@@ -90,6 +96,57 @@ const SelectedPost = ({
     }
   };
 
+  const handlePostComment = async () => {
+    if (!commentText || commentText.trim() === "") {
+      return;
+    }
+
+    try {
+      // Check for bad words
+      const hasBadWords = checkForBadWordsAndAlert(commentText);
+      if (hasBadWords) {
+        Alert.alert("Το σχόλιο περιέχει μη επιτρεπτό κείμενο!");
+        return;
+      }
+
+      setPostingComment(true);
+
+      let userToken = await AsyncStorage.getItem("userToken");
+      let userInfo = await AsyncStorage.getItem("userInfo");
+      let parsedUserInfo = JSON.parse(userInfo);
+
+      let fullName = "";
+      if (parsedUserInfo.isAdmin) {
+        fullName = `${parsedUserInfo.firstName} ${parsedUserInfo.lastName} - (Διαχειριστής)`;
+      } else {
+        fullName = `${parsedUserInfo.firstName} ${parsedUserInfo.lastName}`;
+      }
+
+      let bodyObject = {
+        postId: id,
+        authorId: parsedUserInfo.userId,
+        author: fullName,
+        content: commentText,
+        isMine: true,
+        authorAvatar: parsedUserInfo.avatar,
+      };
+
+      const response = await postNewCommentApi("apiUrl", bodyObject, userToken);
+      const data = await response.json();
+
+      if (data?.resultCode == 0) {
+        setCommentText("");
+        setInputModalVisible(false);
+        getSpecificPostFunction();
+      }
+
+      setPostingComment(false);
+    } catch (error) {
+      console.log("Error posting comment:", error);
+      setPostingComment(false);
+    }
+  };
+
   return (
     <Modal
       animationType="slide"
@@ -99,48 +156,43 @@ const SelectedPost = ({
         setShowModal(!showModal);
       }}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: colors.Main[600] }]}
       >
-        <SafeAreaView
-          style={[styles.safeArea, { backgroundColor: colors.Main[600] }]}
+        <View
+          style={[
+            styles.headerContainer,
+            { backgroundColor: colors.Main[600] },
+          ]}
         >
+          <TouchableOpacity onPress={closeModal} style={styles.backButton}>
+            <SimpleIcons name="arrow-back" size={36} color="white" />
+            <Text style={styles.backButtonText}>Πίσω</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.titleText}>
+            {post?.title !== undefined && post.title}
+          </Text>
+
           <View
             style={[
-              styles.headerContainer,
-              { backgroundColor: colors.Main[600] },
+              styles.dateContainer,
+              { backgroundColor: colors.Second[500] },
             ]}
           >
-            <TouchableOpacity onPress={closeModal} style={styles.backButton}>
-              <SimpleIcons name="arrow-back" size={36} color="white" />
-              <Text style={styles.backButtonText}>Πίσω</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.titleText}>
-              {post?.title !== undefined && post.title}
+            <Text style={styles.dateText}>
+              {post?.publishedAt !== null && (
+                <DateSinceNow date={post?.publishedAt} />
+              )}
             </Text>
-
-            <View
-              style={[
-                styles.dateContainer,
-                { backgroundColor: colors.Second[500] },
-              ]}
-            >
-              <Text style={styles.dateText}>
-                {post?.publishedAt !== null && (
-                  <DateSinceNow date={post?.publishedAt} />
-                )}
-              </Text>
-            </View>
           </View>
+        </View>
 
-          <KeyboardAwareScrollView
+        <View style={{ flex: 1 }}>
+          <ScrollView
             style={styles.contentScrollView}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
             ref={scrollViewRef}
-            enableOnAndroid={true}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={true}
           >
@@ -162,9 +214,9 @@ const SelectedPost = ({
                 </View>
               </>
             )}
-          </KeyboardAwareScrollView>
+          </ScrollView>
 
-          {/* Fixed Input at Bottom */}
+          {/* Fake Input - Fixed at bottom, full width (outside ScrollView) */}
           {!loading && (
             <Comments
               list={[]}
@@ -174,10 +226,26 @@ const SelectedPost = ({
               getSpecificPostFunction={getSpecificPostFunction}
               scrollViewRef={scrollViewRef}
               showInputOnly={true}
+              useFakeInput={true}
+              onOpenInput={() => setInputModalVisible(true)}
+              comment={commentText}
+              setcomment={setCommentText}
+              postCommentLoading={postingComment}
             />
           )}
-        </SafeAreaView>
-      </KeyboardAvoidingView>
+        </View>
+
+        {/* Chat Input Modal for Comments */}
+        <ChatInputModal
+          visible={inputModalVisible}
+          onClose={() => setInputModalVisible(false)}
+          inputText={commentText}
+          onChangeText={setCommentText}
+          onSend={handlePostComment}
+          sending={postingComment}
+          placeholder="Γράψε ένα σχόλιο..."
+        />
+      </SafeAreaView>
     </Modal>
   );
 };

@@ -3,11 +3,8 @@ import {
   View,
   StatusBar,
   FlatList,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   RefreshControl,
   Modal,
@@ -26,6 +23,12 @@ import {
   deleteGroupMessageApi,
   reportGroupMessageApi,
 } from "../apis/GroupChatApi";
+import socketService from "../services/socketService";
+import { getBootstrapUrl } from "../apis/settings/bootstrapUrl";
+import ChatInputModal from "../components/chat/ChatInputModal";
+
+// Get backend URL from existing bootstrap configuration
+const BACKEND_URL = getBootstrapUrl();
 
 const GroupChatScreen = () => {
   const [messages, setMessages] = useState([]);
@@ -45,9 +48,11 @@ const GroupChatScreen = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [inputModalVisible, setInputModalVisible] = useState(false);
   const latestMessageTimestamp = useRef(null);
   const pendingNewMessages = useRef([]);
-  const intervalRef = useRef(null);
+  const isAtBottomRef = useRef(true); // Track previous value to avoid unnecessary re-renders
+  const currentUserIdRef = useRef(null); // Store userId in ref to avoid closure issues
   const { isProMember } = useRevenueCat();
   const navigation = useNavigation();
 
@@ -56,11 +61,9 @@ const GroupChatScreen = () => {
 
     // Cleanup on unmount
     return () => {
-      if (intervalRef.current) {
-        console.log("🧹 GroupChat - Component unmounting, clearing interval");
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      console.log("🧹 GroupChat - Component unmounting, cleaning up");
+      socketService.leaveGroupChat();
+      socketService.offNewGroupMessage();
     };
   }, []);
 
@@ -72,49 +75,120 @@ const GroupChatScreen = () => {
     }
   }, [isProMember]);
 
-  // Auto-refresh messages every 30 seconds with navigation listeners
+  // Update currentUserIdRef whenever currentUser changes
   useEffect(() => {
-    const startInterval = () => {
-      // Only start if no interval is running and conditions are met
-      if (!intervalRef.current && !isDemoUser && !initializing && currentUser) {
-        console.log("🔄 GroupChat - Starting auto-refresh interval");
-        intervalRef.current = setInterval(() => {
-          console.log("🔄 GroupChat - Auto-refreshing messages...");
-          fetchMessages();
-        }, 30000); // 30 seconds
-      } else if (intervalRef.current) {
-        console.log("⚠️ GroupChat - Interval already running, skipping start");
+    if (currentUser?.userId) {
+      currentUserIdRef.current = currentUser.userId;
+      console.log("✅ GroupChat - Updated currentUserIdRef:", currentUser.userId);
+    }
+  }, [currentUser]);
+
+  // Socket.IO real-time connection with navigation listeners
+  useEffect(() => {
+    const connectSocket = async () => {
+      // Only connect if not demo user and conditions are met
+      if (!isDemoUser && !initializing && currentUser) {
+        console.log("🔌 GroupChat - Connecting to Socket.IO...");
+
+        const connected = await socketService.connect(BACKEND_URL);
+        if (connected) {
+          socketService.joinGroupChat();
+
+          // Listen for real-time group messages
+          socketService.onNewGroupMessage((newMessage) => {
+            console.log("🔔 Received real-time group message:", newMessage);
+
+            // Transform userId to match API format (handle both object and string)
+            const messageUserId =
+              typeof newMessage.userId === "object" && newMessage.userId !== null
+                ? newMessage.userId._id ||
+                  newMessage.userId.toString() ||
+                  JSON.stringify(newMessage.userId).replace(/"/g, "")
+                : String(newMessage.userId);
+            const currentUserId = String(currentUserIdRef.current);
+            const isCurrentUser = messageUserId === currentUserId;
+
+            // Transform the message to match existing format
+            const transformedMessage = {
+              id: newMessage.id,
+              text: newMessage.text,
+              username: newMessage.username,
+              date: newMessage.date,
+              userId: newMessage.userId,
+              isCurrentUser: isCurrentUser,
+              isReported: newMessage.isReported || false,
+            };
+
+            // Debug log for ownership
+            console.log("📝 Socket.IO Message ownership check:");
+            console.log("  - Raw userId from socket:", newMessage.userId);
+            console.log("  - Transformed messageUserId:", messageUserId);
+            console.log("  - Current userId from ref:", currentUserId);
+            console.log("  - currentUserIdRef.current:", currentUserIdRef.current);
+            console.log("  - Are they equal?", messageUserId === currentUserId);
+            console.log("  - Result isCurrentUser:", isCurrentUser);
+
+            // Add message if user is at bottom
+            if (isAtBottom) {
+              setMessages((prev) => {
+                // Check for duplicates
+                const exists = prev.some(msg => msg.id === transformedMessage.id);
+                if (!exists) {
+                  // Update latest timestamp
+                  latestMessageTimestamp.current = new Date(transformedMessage.date);
+                  return [transformedMessage, ...prev];
+                }
+                return prev;
+              });
+            } else {
+              // Store as pending if user scrolled up
+              const exists = pendingNewMessages.current.some(msg => msg.id === transformedMessage.id);
+              if (!exists) {
+                pendingNewMessages.current = [transformedMessage, ...pendingNewMessages.current];
+                setNewMessageCount(pendingNewMessages.current.length);
+              }
+            }
+          });
+
+          console.log("✅ GroupChat - Socket.IO connected and listening");
+        }
       }
     };
 
-    const stopInterval = () => {
-      if (intervalRef.current) {
-        console.log("🛑 GroupChat - Clearing auto-refresh interval");
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    const disconnectSocket = () => {
+      console.log("🔌 GroupChat - Disconnecting socket listeners");
+      socketService.leaveGroupChat();
+      socketService.offNewGroupMessage();
     };
 
-    // Start interval immediately if conditions are met
-    startInterval();
+    // Connect immediately if conditions are met
+    connectSocket();
 
     // Add navigation listeners
     const focusUnsubscribe = navigation.addListener("focus", () => {
-      console.log("🔄 GroupChat - Screen focused, starting interval");
-      startInterval();
+      console.log("🔄 GroupChat - Screen focused, reconnecting socket");
+      fetchMessages(); // Fetch latest messages on focus
+      connectSocket();
     });
 
     const blurUnsubscribe = navigation.addListener("blur", () => {
-      console.log("🛑 GroupChat - Screen blurred, stopping interval");
-      stopInterval();
+      console.log("🛑 GroupChat - Screen blurred, disconnecting socket");
+      disconnectSocket();
+    });
+
+    // Add tab press listener to fetch when tapping already-active tab
+    const tabPressUnsubscribe = navigation.addListener("tabPress", () => {
+      console.log("🔄 GroupChat - Tab pressed, fetching messages");
+      fetchMessages(); // Fetch immediately when tab is pressed
     });
 
     return () => {
-      stopInterval();
+      disconnectSocket();
       focusUnsubscribe();
       blurUnsubscribe();
+      tabPressUnsubscribe();
     };
-  }, [isDemoUser, initializing, currentUser, navigation]);
+  }, [isDemoUser, initializing, currentUser, navigation, isAtBottom]);
 
   const initializeChat = async () => {
     console.log("🚀 GroupChat - Starting initializeChat");
@@ -271,7 +345,12 @@ const GroupChatScreen = () => {
 
             if (isAtBottom) {
               console.log("📍 User at bottom — adding new messages");
-              setMessages((prev) => [...newMessages, ...prev]);
+              setMessages((prev) => {
+                // Deduplicate: filter out messages that already exist
+                const existingIds = new Set(prev.map(m => m.id));
+                const uniqueNewMessages = newMessages.filter(m => !existingIds.has(m.id));
+                return [...uniqueNewMessages, ...prev];
+              });
             } else {
               console.log(
                 "📍 User reading old messages — storing new messages"
@@ -332,7 +411,8 @@ const GroupChatScreen = () => {
         userId: userInfo.userId,
       };
 
-      console.log("Sending message:", messageBody);
+      console.log("📤 Sending message:", messageBody);
+      console.log("📤 Current user ID in ref:", currentUserIdRef.current);
 
       const response = await sendGroupMessageApi(
         "apiUrl",
@@ -344,25 +424,11 @@ const GroupChatScreen = () => {
       console.log("Send message response:", data);
 
       if (data.resultCode === 0) {
-        // Add the new message to local state immediately for better UX
-        const newMessage = {
-          id: data.response.id || Date.now().toString(),
-          text: data.response.message || inputText.trim(),
-          username:
-            data.response.authorName ||
-            `${userInfo.firstName} ${userInfo.lastName}`,
-          date: data.response.date || new Date().toISOString(),
-          userId: data.response.userId || userInfo.userId,
-          isCurrentUser: true,
-        };
-
-        // Update latest timestamp when sending
-        latestMessageTimestamp.current = new Date(newMessage.date);
-
-        setMessages((prevMessages) => [newMessage, ...prevMessages]);
+        // Message will be received via Socket.IO real-time
+        // Clear input immediately for better UX
         setInputText("");
-
-        console.log("Message sent successfully");
+        setInputModalVisible(false); // Close modal after successful send
+        console.log("✅ Message sent successfully, waiting for socket event");
       } else {
         Alert.alert("Σφάλμα", data.message || "Το μήνυμα δεν στάλθηκε");
       }
@@ -389,7 +455,12 @@ const GroupChatScreen = () => {
     // For inverted list, check if we're at the top (which is visually bottom)
     // Use stricter threshold (20px) to avoid auto-scrolling when user is reading older messages
     const isNearBottom = contentOffset.y < 20;
-    setIsAtBottom(isNearBottom);
+
+    // Only update state if value actually changed (prevents unnecessary re-renders)
+    if (isAtBottomRef.current !== isNearBottom) {
+      isAtBottomRef.current = isNearBottom;
+      setIsAtBottom(isNearBottom);
+    }
 
     // When user scrolls to bottom and there are pending messages, add them
     if (isNearBottom && pendingNewMessages.current.length > 0) {
@@ -399,7 +470,12 @@ const GroupChatScreen = () => {
       const messagesToAdd = [...pendingNewMessages.current];
       pendingNewMessages.current = [];
       setNewMessageCount(0);
-      setMessages((prevMessages) => [...messagesToAdd, ...prevMessages]);
+      setMessages((prevMessages) => {
+        // Deduplicate: filter out messages that already exist
+        const existingIds = new Set(prevMessages.map(m => m.id));
+        const uniqueMessages = messagesToAdd.filter(m => !existingIds.has(m.id));
+        return [...uniqueMessages, ...prevMessages];
+      });
     }
   };
 
@@ -411,10 +487,16 @@ const GroupChatScreen = () => {
         const messagesToAdd = [...pendingNewMessages.current];
         pendingNewMessages.current = [];
         setNewMessageCount(0);
-        setMessages((prevMessages) => [...messagesToAdd, ...prevMessages]);
+        setMessages((prevMessages) => {
+          // Deduplicate: filter out messages that already exist
+          const existingIds = new Set(prevMessages.map(m => m.id));
+          const uniqueMessages = messagesToAdd.filter(m => !existingIds.has(m.id));
+          return [...uniqueMessages, ...prevMessages];
+        });
       }
 
       flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+      isAtBottomRef.current = true;
       setIsAtBottom(true);
     }
   };
@@ -979,58 +1061,56 @@ const GroupChatScreen = () => {
       style={{ flex: 1, backgroundColor: colors.Background.primary }}
       edges={["top", "left", "right"]}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={colors.Background.primary}
-        />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.Background.primary}
+      />
 
-        {/* Header */}
+      {/* Header - Fixed, not affected by keyboard */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.Border.light,
+          backgroundColor: "white",
+        }}
+      >
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.Border.light,
-            backgroundColor: "white",
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: colors.Success.primary,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "600",
+            color: colors.Text.primary,
+            flex: 1,
           }}
         >
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: colors.Success.primary,
-              marginRight: 8,
-            }}
-          />
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "600",
-              color: colors.Text.primary,
-              flex: 1,
-            }}
-          >
-            Ομαδικό Chat
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.Text.secondary,
-            }}
-          >
-            {messages.length >= 100
-              ? "100+ μηνύματα"
-              : `${messages.length} μηνύματα`}
-          </Text>
-        </View>
+          Ομαδικό Chat
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: colors.Text.secondary,
+          }}
+        >
+          {messages.length >= 100
+            ? "100+ μηνύματα"
+            : `${messages.length} μηνύματα`}
+        </Text>
+      </View>
+
+      {/* Main content */}
+      <View style={{ flex: 1 }}>
 
         {/* Tooltip */}
         {showTooltip && (
@@ -1114,13 +1194,9 @@ const GroupChatScreen = () => {
           }
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
-          scrollEventThrottle={16}
+          scrollEventThrottle={100}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          maintainVisibleContentPosition={{
-            minIndexForVisible: 1,
-            autoscrollToTopThreshold: 20,
-          }}
         />
 
         {/* New Messages Banner */}
@@ -1177,69 +1253,69 @@ const GroupChatScreen = () => {
           </Animatable.View>
         )}
 
-        {/* Input */}
-        <View
+        {/* Fake Input - Opens Modal */}
+        <TouchableOpacity
+          onPress={() => setInputModalVisible(true)}
+          activeOpacity={0.7}
           style={{
             flexDirection: "row",
-            alignItems: "flex-end",
+            alignItems: "center",
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: 0,
+            paddingBottom: 16,
             borderTopWidth: 1,
             borderTopColor: colors.Border.light,
             backgroundColor: "white",
           }}
         >
-          <TextInput
+          <View
             style={{
               flex: 1,
               borderWidth: 1,
               borderColor: colors.Border.light,
               borderRadius: 20,
               paddingHorizontal: 16,
-              paddingVertical: 10,
-              fontSize: 16,
-              maxHeight: 100,
-              marginRight: 8,
-              marginBottom: 10,
+              paddingVertical: 12,
               backgroundColor: colors.Background.primary,
+              marginRight: 8,
             }}
-            placeholder="Γράψτε ένα μήνυμα..."
-            placeholderTextColor={colors.Text.secondary}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline={true}
-            textAlignVertical="center"
-          />
-          <TouchableOpacity
-            onPress={sendMessage}
-            disabled={inputText.trim() === "" || sending}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.Text.secondary,
+              }}
+            >
+              Γράψτε ένα μήνυμα...
+            </Text>
+          </View>
+          <View
             style={{
               width: 44,
               height: 44,
               borderRadius: 22,
-              backgroundColor:
-                inputText.trim() !== "" && !sending
-                  ? colors.Main[500]
-                  : colors.Border.light,
+              backgroundColor: colors.Border.light,
               justifyContent: "center",
               alignItems: "center",
-              marginBottom: 10,
             }}
           >
-            {sending ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <SimpleIcons
-                name="send"
-                size={20}
-                color={
-                  inputText.trim() !== "" ? "white" : colors.Text.secondary
-                }
-              />
-            )}
-          </TouchableOpacity>
-        </View>
+            <SimpleIcons
+              name="send"
+              size={20}
+              color={colors.Text.secondary}
+            />
+          </View>
+        </TouchableOpacity>
+
+        {/* Chat Input Modal */}
+        <ChatInputModal
+          visible={inputModalVisible}
+          onClose={() => setInputModalVisible(false)}
+          inputText={inputText}
+          onChangeText={setInputText}
+          onSend={sendMessage}
+          sending={sending}
+        />
 
         {/* Report Modal */}
         <Modal
@@ -1472,7 +1548,7 @@ const GroupChatScreen = () => {
             </View>
           </View>
         </Modal>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };

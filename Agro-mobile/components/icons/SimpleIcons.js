@@ -86,6 +86,14 @@ const SimpleIcons = ({ name, size = 24, color = "black", style }) => {
       case "arrow-right":
         return "chevron-forward";
 
+      case "arrow-down":
+      case "chevron-down":
+        return "chevron-down";
+
+      case "arrow-up":
+      case "chevron-up":
+        return "chevron-up";
+
       case "more-horizontal":
       case "ellipsis-horizontal":
         return "ellipsis-horizontal";

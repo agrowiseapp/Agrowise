@@ -1,6 +1,6 @@
 // Development Configuration
 // Set this to true to bypass RevenueCat payments during development
-export const DEVELOPMENT_MODE = false;
+export const DEVELOPMENT_MODE = false; // 🚀 PRODUCTION MODE - Payments enabled
 
 // Development settings
 export const DEV_CONFIG = {

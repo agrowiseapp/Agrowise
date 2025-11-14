@@ -1,7 +1,7 @@
 // Bootstrap URLs - these should be very stable and rarely change
 const BOOTSTRAP_URLS = {
   local: "http://192.168.2.7:3001",
-  development: "http://192.168.2.4:3001",
+  development: "http://192.168.2.6:3001", // ← Updated to current IP
   production: "https://agrowise-production.up.railway.app",
   staging: "https://agrowise-staging.onrender.com",
 };

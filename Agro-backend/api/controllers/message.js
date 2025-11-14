@@ -48,13 +48,18 @@ exports.send_message = async (req, res, next) => {
         const notificationBody =
           "Έλαβες ένα νέο μήνυμα! Ανοιξε την εφαρμογή για να το διαβάσεις.";
 
-        // Send push notification to the user
-        await sendPushNotification(
-          user.deviceToken,
-          notificationTitle,
-          notificationBody,
-          user.device
-        );
+        // Send push notification to the user (wrapped in try-catch to not block message sending)
+        try {
+          await sendPushNotification(
+            user.deviceToken,
+            notificationTitle,
+            notificationBody,
+            user.device
+          );
+          console.log("✅ Push notification sent successfully");
+        } catch (notificationError) {
+          console.log("⚠️ Push notification failed (message still sent):", notificationError.message);
+        }
       }
     }
 
@@ -70,6 +75,27 @@ exports.send_message = async (req, res, next) => {
       id: newMessage._id,
       publishedAt: newMessage.publishedAt,
     };
+
+    // Emit real-time message via Socket.IO
+    try {
+      const io = req.app.get('io');
+      if (io && io.emitNewMessage) {
+        const socketMessage = {
+          _id: newMessage._id,
+          text: newMessage.text,
+          createdAt: newMessage.publishedAt,
+          user: {
+            _id: userType === 0 ? 1 : 2, // 1 for user, 2 for admin
+            name: author,
+          },
+        };
+        io.emitNewMessage(chatId, socketMessage);
+        console.log(`🔌 Real-time message emitted for chat ${chatId}`);
+      }
+    } catch (socketError) {
+      console.log("⚠️ Socket emission failed (non-critical):", socketError.message);
+      // Don't fail the request if socket emission fails
+    }
 
     const response = createResponse(
       "success",
