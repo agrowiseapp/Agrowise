@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "22",
+      "buildNumber": "23",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/Logo/icon.png",
       "infoPlist": {
@@ -60,7 +60,22 @@
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
             "newArchEnabled": true,
-            "ClangAllowNonModularIncludesInFrameworkModules": true
+            "ClangAllowNonModularIncludesInFrameworkModules": true,
+            "extraPods": [
+              {
+                "name": "RNFBApp-Core-Includes",
+                "configurations": ["Debug"],
+                "path": "../node_modules/@react-native-firebase/app/ios/RNFBApp-Core-Includes.podspec"
+              },
+              {
+                "podName": "React-Core",
+                "podConfiguration": "modular_headers: true"
+              },
+              {
+                "podName": "React-cxxreact",
+                "podConfiguration": "modular_headers: true"
+              }
+            ]
           }
         }
       ],
