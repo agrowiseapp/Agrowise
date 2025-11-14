@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "23",
+      "buildNumber": "24",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/Logo/icon.png",
       "infoPlist": {
@@ -61,7 +61,12 @@
           "ios": {
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
-            "newArchEnabled": true
+            "newArchEnabled": true,
+            "extraPodfileProperties": {
+              "CLANG_WARN_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "NO",
+              "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES",
+              "CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER": "NO"
+            }
           }
         }
       ],

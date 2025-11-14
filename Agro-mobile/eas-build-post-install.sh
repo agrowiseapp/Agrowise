@@ -27,7 +27,9 @@ if [ "$EAS_BUILD_PLATFORM" == "ios" ]; then
 
   project.targets.each do |target|
     target.build_configurations.each do |config|
+      config.build_settings['CLANG_WARN_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'NO'
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
       puts \"✅ Applied fix to #{target.name} - #{config.name}\"
     end
   end
