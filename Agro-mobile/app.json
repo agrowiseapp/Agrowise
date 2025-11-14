@@ -59,21 +59,13 @@
           "ios": {
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
-            "newArchEnabled": true,
+            "newArchEnabled": false,
             "ClangAllowNonModularIncludesInFrameworkModules": true,
             "extraPods": [
               {
                 "name": "RNFBApp-Core-Includes",
                 "configurations": ["Debug"],
                 "path": "../node_modules/@react-native-firebase/app/ios/RNFBApp-Core-Includes.podspec"
-              },
-              {
-                "name": "React-Core",
-                "podConfiguration": "modular_headers: true"
-              },
-              {
-                "name": "React-cxxreact",
-                "podConfiguration": "modular_headers: true"
               }
             ]
           }
