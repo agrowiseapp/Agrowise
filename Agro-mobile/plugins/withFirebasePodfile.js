@@ -2,10 +2,6 @@ const { withDangerousMod } = require("@expo/config-plugins");
 const fs = require("fs");
 const path = require("path");
 
-/**
- * Custom Expo config plugin to fix Firebase + iOS compatibility
- * Adds Clang build settings to allow non-modular header includes
- */
 module.exports = function withFirebasePodfile(config) {
   return withDangerousMod(config, [
     "ios",
@@ -14,29 +10,16 @@ module.exports = function withFirebasePodfile(config) {
         config.modRequest.platformProjectRoot,
         "Podfile"
       );
+      let podfile = fs.readFileSync(podfilePath, "utf8");
 
-      let podfileContent = fs.readFileSync(podfilePath, "utf-8");
-
-      // Check if our fix is already applied
-      if (
-        podfileContent.includes(
-          "CLANG_WARN_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES"
-        )
-      ) {
-        console.log(
-          "✅ Firebase Podfile fix already applied, skipping..."
-        );
+      const postInstallStart = podfile.indexOf("post_install do |installer|");
+      if (postInstallStart === -1) {
+        console.warn("⚠️ No post_install block found.");
         return config;
       }
 
-      // Find the post_install block and add our fix
-      const postInstallRegex = /(post_install do \|installer\|[\s\S]*?)(  end\nend)/;
-
-      if (postInstallRegex.test(podfileContent)) {
-        podfileContent = podfileContent.replace(
-          postInstallRegex,
-          `$1
-    # Fix for Firebase non-modular header includes
+      const insertCode = `
+    # Firebase non-modular header fix
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['CLANG_WARN_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'NO'
@@ -44,17 +27,17 @@ module.exports = function withFirebasePodfile(config) {
         config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
       end
     end
+`;
 
-$2`
-        );
+      // Safely insert before the FIRST closing "end" that closes post_install
+      const postInstallEnd = podfile.indexOf("end", postInstallStart);
+      podfile =
+        podfile.slice(0, postInstallEnd) +
+        insertCode +
+        podfile.slice(postInstallEnd);
 
-        fs.writeFileSync(podfilePath, podfileContent);
-        console.log("✅ Applied Firebase Podfile fix successfully!");
-      } else {
-        console.warn(
-          "⚠️  Could not find post_install block in Podfile"
-        );
-      }
+      fs.writeFileSync(podfilePath, podfile);
+      console.log("✅ Applied Firebase Podfile fix safely!");
 
       return config;
     },
