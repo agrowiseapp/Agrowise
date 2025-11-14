@@ -59,15 +59,8 @@
           "ios": {
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
-            "newArchEnabled": false,
-            "ClangAllowNonModularIncludesInFrameworkModules": true,
-            "extraPods": [
-              {
-                "name": "RNFBApp-Core-Includes",
-                "configurations": ["Debug"],
-                "path": "../node_modules/@react-native-firebase/app/ios/RNFBApp-Core-Includes.podspec"
-              }
-            ]
+            "newArchEnabled": true,
+            "ClangAllowNonModularIncludesInFrameworkModules": true
           }
         }
       ],
