@@ -12,13 +12,11 @@
       "resizeMode": "contain",
       "backgroundColor": "#628479"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "21",
+      "buildNumber": "22",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/Logo/icon.png",
       "infoPlist": {
@@ -61,7 +59,8 @@
           "ios": {
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
-            "newArchEnabled": true
+            "newArchEnabled": true,
+            "ClangAllowNonModularIncludesInFrameworkModules": true
           }
         }
       ],
