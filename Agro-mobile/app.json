@@ -12,11 +12,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#628479"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "23",
+      "buildNumber": "25",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/Logo/icon.png",
       "infoPlist": {
@@ -60,7 +62,7 @@
             "useFrameworks": "static",
             "deploymentTarget": "15.1",
             "newArchEnabled": true,
-            "ClangAllowNonModularIncludesInFrameworkModules": true
+            "buildReactNativeFromSource": true
           }
         }
       ],
