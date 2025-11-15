@@ -2,7 +2,7 @@
   "expo": {
     "name": "agrowise",
     "slug": "agrowise",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "scheme": "agrowise",
     "orientation": "portrait",
     "icon": "./assets/Logo/icon.png",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "aggro.application",
-      "buildNumber": "25",
+      "buildNumber": "26",
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/Logo/icon.png",
       "infoPlist": {
