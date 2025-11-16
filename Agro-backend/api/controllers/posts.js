@@ -210,14 +210,26 @@ exports.posts_publish_post = (req, res, next) => {
           const notificationTitle = result.title;
           const notificationBody = "Μπείτε στην εφαρμογή για να διαβάσετε ολόκληρο το άρθρο!";
 
-          // Send notifications with proper error handling
-          let notificationErrors = 0;
-          let notificationsSent = 0;
+          console.log(`📰 POST Push: Starting broadcast for "${notificationTitle}"`);
+          console.log(`📊 POST Push: Found ${users.length} users with device tokens`);
+
+          // Send notifications with proper error handling and detailed tracking
+          let androidSent = 0;
+          let iosSent = 0;
+          let androidFailed = 0;
+          let iosFailed = 0;
+          let noDeviceType = 0;
 
           for (const user of users) {
             try {
               const deviceToken = user.deviceToken;
               const deviceType = user.device;
+
+              if (!deviceType) {
+                noDeviceType++;
+                console.log(`⚠️ POST Push: User has token but no device type (skipped)`);
+                continue;
+              }
 
               if (deviceToken && deviceType) {
                 await sendPushNotification(
@@ -226,20 +238,44 @@ exports.posts_publish_post = (req, res, next) => {
                   notificationBody,
                   deviceType
                 );
-                notificationsSent++;
+
+                // Track by platform
+                if (deviceType === 1) {
+                  androidSent++;
+                } else if (deviceType === 2) {
+                  iosSent++;
+                }
               }
             } catch (notificationError) {
-              notificationErrors++;
-              // Continue with other notifications even if one fails
+              // Track failures by platform
+              if (user.device === 1) {
+                androidFailed++;
+              } else if (user.device === 2) {
+                iosFailed++;
+              }
+              console.log(`❌ POST Push: Failed for user - ${notificationError.message}`);
             }
           }
 
-          console.log(`📱 Push: Sent ${notificationsSent} notifications successfully`);
-          if (notificationErrors > 0) {
-            console.log(`❌ Push: Failed to send ${notificationErrors} notifications`);
+          // Summary logging
+          const totalSent = androidSent + iosSent;
+          const totalFailed = androidFailed + iosFailed;
+
+          console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          console.log(`📱 POST PUSH SUMMARY for "${notificationTitle}"`);
+          console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          console.log(`✅ Total Sent: ${totalSent}`);
+          console.log(`   📱 Android: ${androidSent} sent, ${androidFailed} failed`);
+          console.log(`   🍎 iOS: ${iosSent} sent, ${iosFailed} failed`);
+          if (totalFailed > 0) {
+            console.log(`❌ Total Failed: ${totalFailed}`);
           }
+          if (noDeviceType > 0) {
+            console.log(`⚠️ Skipped (no device type): ${noDeviceType}`);
+          }
+          console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         } catch (notificationError) {
-          console.log("❌ Notification system error:", notificationError.message);
+          console.log("❌ POST Push: Notification system error:", notificationError.message);
         }
 
         // Create the response object

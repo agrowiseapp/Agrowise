@@ -118,15 +118,20 @@ exports.user_login = async (req, res, next) => {
 
       if (req.body.deviceToken && req.body.deviceToken.trim() !== "") {
         user.deviceToken = req.body.deviceToken.trim();
-        console.log("Device with token is saved : ", user.deviceToken);
+        console.log("📱 Email Login: Device token saved:", user.deviceToken);
       }
 
       if (req.body.device) {
         user.device = req.body.device;
-        console.log("Device is saved : ", user.device);
+        const deviceName = req.body.device === 1 ? "Android" : req.body.device === 2 ? "iOS" : "Unknown";
+        console.log(`📱 Email Login: Device type saved: ${req.body.device} (${deviceName})`);
       }
 
       await user.save();
+
+      if (req.body.deviceToken || req.body.device) {
+        console.log("✅ Email Login: User device info updated successfully");
+      }
 
       const response = createResponse("success", 0, "Auth successful", {
         token: token,
@@ -152,7 +157,7 @@ exports.user_login = async (req, res, next) => {
 
 exports.user_google_login = async (req, res, next) => {
   try {
-    const { idToken, deviceToken } = req.body;
+    const { idToken, deviceToken, device } = req.body;
 
     // Verify the Google ID token
     const { verifyGoogleToken } = require("../utils/googleAuth");
@@ -218,11 +223,22 @@ exports.user_google_login = async (req, res, next) => {
       { expiresIn: "31d" }
     );
 
-    // Update device token if provided
+    // Update device token and device type if provided
     if (deviceToken && deviceToken.trim() !== "") {
       existingUser.deviceToken = deviceToken.trim();
-      console.log("Device token saved:", existingUser.deviceToken);
+      console.log("📱 Google Login: Device token saved:", existingUser.deviceToken);
+    }
+
+    if (device) {
+      existingUser.device = device;
+      const deviceName = device === 1 ? "Android" : device === 2 ? "iOS" : "Unknown";
+      console.log(`📱 Google Login: Device type saved: ${device} (${deviceName})`);
+    }
+
+    // Save if any device info was updated
+    if ((deviceToken && deviceToken.trim() !== "") || device) {
       await existingUser.save();
+      console.log("✅ Google Login: User device info updated successfully");
     }
 
     const response = createResponse("success", 0, "Google Auth successful", {
