@@ -10,8 +10,6 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 // 3) Verify Google ID Token
 async function verifyGoogleToken(idToken) {
   try {
-    console.log("Verifying Google token...");
-
     // Verify the token
     const ticket = await client.verifyIdToken({
       idToken: idToken,
@@ -19,7 +17,6 @@ async function verifyGoogleToken(idToken) {
     });
 
     const payload = ticket.getPayload();
-    console.log("Google token verified successfully");
 
     // Extract name parts with robust fallbacks
     // Priority: given_name -> name -> email username -> "User"

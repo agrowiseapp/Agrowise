@@ -107,8 +107,6 @@ exports.user_login = async (req, res, next) => {
     );
 
     if (isPasswordMatch) {
-      console.log("Success Auth");
-
       const jwtSecret = process.env.JWT_KEY;
       const token = jwt.sign(
         { email: user.email, userId: user._id },
@@ -116,21 +114,22 @@ exports.user_login = async (req, res, next) => {
         { expiresIn: "31d" }
       );
 
+      let updated = false;
       if (req.body.deviceToken && req.body.deviceToken.trim() !== "") {
         user.deviceToken = req.body.deviceToken.trim();
-        console.log("📱 Email Login: Device token saved:", user.deviceToken);
+        updated = true;
       }
 
       if (req.body.device) {
         user.device = req.body.device;
-        const deviceName = req.body.device === 1 ? "Android" : req.body.device === 2 ? "iOS" : "Unknown";
-        console.log(`📱 Email Login: Device type saved: ${req.body.device} (${deviceName})`);
+        updated = true;
       }
 
       await user.save();
 
-      if (req.body.deviceToken || req.body.device) {
-        console.log("✅ Email Login: User device info updated successfully");
+      if (updated) {
+        const deviceName = req.body.device === 1 ? "Android" : req.body.device === 2 ? "iOS" : "Unknown";
+        console.log(`✅ Email Login: ${user.email} | Device: ${deviceName} | Token saved`);
       }
 
       const response = createResponse("success", 0, "Auth successful", {
@@ -213,8 +212,6 @@ exports.user_google_login = async (req, res, next) => {
       }
     }
 
-    console.log("Google Auth successful");
-
     // Generate JWT token
     const jwtSecret = process.env.JWT_KEY;
     const token = jwt.sign(
@@ -224,21 +221,22 @@ exports.user_google_login = async (req, res, next) => {
     );
 
     // Update device token and device type if provided
+    let updated = false;
     if (deviceToken && deviceToken.trim() !== "") {
       existingUser.deviceToken = deviceToken.trim();
-      console.log("📱 Google Login: Device token saved:", existingUser.deviceToken);
+      updated = true;
     }
 
     if (device) {
       existingUser.device = device;
-      const deviceName = device === 1 ? "Android" : device === 2 ? "iOS" : "Unknown";
-      console.log(`📱 Google Login: Device type saved: ${device} (${deviceName})`);
+      updated = true;
     }
 
-    // Save if any device info was updated
-    if ((deviceToken && deviceToken.trim() !== "") || device) {
+    // Save and log once if any device info was updated
+    if (updated) {
       await existingUser.save();
-      console.log("✅ Google Login: User device info updated successfully");
+      const deviceName = device === 1 ? "Android" : device === 2 ? "iOS" : "Unknown";
+      console.log(`✅ Google Login: ${existingUser.email} | Device: ${deviceName} | Token saved`);
     }
 
     const response = createResponse("success", 0, "Google Auth successful", {

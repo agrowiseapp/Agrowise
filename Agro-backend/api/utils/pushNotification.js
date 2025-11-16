@@ -191,73 +191,30 @@ const generateAPNsToken = () => {
 
 const getAccessToken = async () => {
   try {
-    console.log("🔑 Firebase: Starting authentication process");
-    console.log("🔍 Firebase: Checking environment variables...");
-    
-    // Debug environment variables
-    console.log(`🔍 Firebase: FIREBASE_CLIENT_EMAIL exists: ${!!process.env.FIREBASE_CLIENT_EMAIL}`);
-    console.log(`🔍 Firebase: FIREBASE_PRIVATE_KEY exists: ${!!process.env.FIREBASE_PRIVATE_KEY}`);
-    
-    if (process.env.FIREBASE_CLIENT_EMAIL) {
-      console.log(`🔍 Firebase: Client email value: ${process.env.FIREBASE_CLIENT_EMAIL}`);
-    }
-    
-    if (process.env.FIREBASE_PRIVATE_KEY) {
-      console.log(`🔍 Firebase: Private key length (raw): ${process.env.FIREBASE_PRIVATE_KEY.length} characters`);
-      console.log(`🔍 Firebase: Private key starts with: "${process.env.FIREBASE_PRIVATE_KEY.substring(0, 50)}..."`);
-      console.log(`🔍 Firebase: Private key ends with: "...${process.env.FIREBASE_PRIVATE_KEY.substring(process.env.FIREBASE_PRIVATE_KEY.length - 50)}"`);
-      console.log(`🔍 Firebase: Contains \\n sequences: ${process.env.FIREBASE_PRIVATE_KEY.includes('\\n')}`);
-      console.log(`🔍 Firebase: Contains actual newlines: ${process.env.FIREBASE_PRIVATE_KEY.includes('\n')}`);
-      console.log(`🔍 Firebase: Contains BEGIN PRIVATE KEY: ${process.env.FIREBASE_PRIVATE_KEY.includes('BEGIN PRIVATE KEY')}`);
-    }
-
     // Read from environment variables only
     if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-      throw new Error("Missing required Firebase environment variables: FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY must be set");
+      throw new Error("Missing required Firebase environment variables");
     }
 
-    console.log("📧 Firebase: Using environment variables");
-    
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-    console.log("🔧 Firebase: Starting private key processing...");
 
-    // Handle different possible formats of the private key in environment variables
+    // Handle different possible formats of the private key
     if (privateKey) {
-      console.log("🔧 Firebase: Step 1 - Replacing literal \\n with actual newlines");
-      const beforeNewlines = privateKey.length;
       privateKey = privateKey.replace(/\\n/g, '\n');
-      console.log(`🔧 Firebase: After newline replacement: ${beforeNewlines} → ${privateKey.length} characters`);
-      console.log(`🔧 Firebase: Now contains actual newlines: ${privateKey.includes('\n')}`);
 
       // If the key doesn't start with BEGIN, it might be base64 encoded
       if (!privateKey.includes('BEGIN PRIVATE KEY')) {
-        console.log("🔧 Firebase: Step 2 - Key doesn't contain BEGIN, trying base64 decode");
         try {
-          const beforeBase64 = privateKey.length;
           privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
-          console.log(`🔧 Firebase: Base64 decode successful: ${beforeBase64} → ${privateKey.length} characters`);
-          console.log(`🔧 Firebase: After base64 decode, starts with: "${privateKey.substring(0, 50)}..."`);
         } catch (e) {
-          console.log("🔧 Firebase: Private key is not base64 encoded");
-          console.log(`🔧 Firebase: Base64 decode error: ${e.message}`);
+          // Not base64 encoded, continue
         }
-      } else {
-        console.log("🔧 Firebase: Step 2 - Key already contains BEGIN PRIVATE KEY, skipping base64 decode");
       }
 
       // Ensure proper formatting
       if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
-        console.log("🔧 Firebase: Step 3 - Adding proper BEGIN/END headers");
-        const beforeHeaders = privateKey.length;
         privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----\n`;
-        console.log(`🔧 Firebase: After adding headers: ${beforeHeaders} → ${privateKey.length} characters`);
-      } else {
-        console.log("🔧 Firebase: Step 3 - Key already has proper headers");
       }
-
-      console.log(`🔧 Firebase: Final processed key length: ${privateKey.length} characters`);
-      console.log(`🔧 Firebase: Final key starts with: "${privateKey.substring(0, 50)}..."`);
-      console.log(`🔧 Firebase: Final key ends with: "...${privateKey.substring(privateKey.length - 50)}"`);
     }
 
     const keys = {
@@ -265,52 +222,16 @@ const getAccessToken = async () => {
       private_key: privateKey,
     };
 
-    console.log(`📧 Firebase: Final client email: ${keys.client_email}`);
-    console.log(`🔐 Firebase: Final private key length: ${keys.private_key.length} characters`);
-
-    // Validate key format
-    const keyLines = keys.private_key.split('\n');
-    console.log(`🔍 Firebase: Key has ${keyLines.length} lines`);
-    console.log(`🔍 Firebase: First line: "${keyLines[0]}"`);
-    console.log(`🔍 Firebase: Last line: "${keyLines[keyLines.length - 1]}"`);
-    
-    // Check for common issues
-    if (!keys.private_key.includes('-----BEGIN PRIVATE KEY-----')) {
-      console.log("⚠️ Firebase: WARNING - Key missing BEGIN header");
-    }
-    if (!keys.private_key.includes('-----END PRIVATE KEY-----')) {
-      console.log("⚠️ Firebase: WARNING - Key missing END header");
-    }
-
-    console.log("🔧 Firebase: Creating JWT client...");
     const client = new JWT({
       email: keys.client_email,
       key: keys.private_key,
       scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
     });
 
-    console.log("🔧 Firebase: Attempting to authorize JWT client...");
     const token = await client.authorize();
-    console.log("✅ Firebase: Authentication successful");
-    console.log(`🔑 Firebase: Access token length: ${token.access_token.length} characters`);
-    console.log(`🔑 Firebase: Token starts with: ${token.access_token.substring(0, 20)}...`);
     return token.access_token;
   } catch (error) {
-    console.log(`❌ Firebase: Authentication failed - ${error.message}`);
-    console.log(`🔍 Firebase: Error name: ${error.name}`);
-    console.log(`🔍 Firebase: Error code: ${error.code}`);
-    console.log(`🔍 Firebase: Error stack:`, error.stack);
-    
-    // Additional debugging for JWT errors
-    if (error.message && error.message.includes('invalid_grant')) {
-      console.log("🔍 Firebase: This is a JWT signature validation error");
-      console.log("🔍 Firebase: Common causes:");
-      console.log("   - Private key formatting issues");
-      console.log("   - Mismatched client_email and private_key");
-      console.log("   - Clock synchronization issues");
-      console.log("   - Invalid service account permissions");
-    }
-    
+    console.log(`❌ Firebase Auth failed: ${error.message}`);
     throw error;
   }
 };
