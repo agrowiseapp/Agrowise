@@ -110,7 +110,7 @@ const RegisterScreen = () => {
         gender: gender,
         dateOfBirth: dob,
       };
-      authAppKey = "@gr0w1s3Application!@#123";
+      const authAppKey = "@gr0w1s3Application!@#123";
 
       const response = await registerUserApi("apiUrl", bodyObject, authAppKey);
       const data = await response.json();
