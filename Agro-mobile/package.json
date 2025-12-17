@@ -1,6 +1,6 @@
 {
   "name": "agrowise",
-  "version": "1.0.81",
+  "version": "1.1.6",
   "private": true,
   "scripts": {
     "start": "expo start",
