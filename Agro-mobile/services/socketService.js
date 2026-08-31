@@ -25,11 +25,19 @@ class SocketService {
 
       // If already connected, don't reconnect
       if (this.socket && this.connected) {
-        console.log('✅ Socket already connected');
         return true;
       }
 
-      console.log(`🔌 Connecting to socket server: ${serverUrl}`);
+      // A socket exists but is not connected (dropped, or left over from a
+      // previous user). Tear it down first - otherwise the old instance keeps
+      // its own handlers and reconnection timers, producing duplicate
+      // messages and a connection we can no longer reach with off().
+      if (this.socket) {
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+        this.socket = null;
+        this.connected = false;
+      }
 
       // Create socket connection with authentication
       this.socket = io(serverUrl, {
@@ -99,7 +107,7 @@ class SocketService {
    */
   disconnect() {
     if (this.socket) {
-      console.log('🔌 Disconnecting socket...');
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;

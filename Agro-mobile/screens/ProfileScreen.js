@@ -34,6 +34,7 @@ import { BottomSheet } from "@rneui/themed";
 import { deleteUserApi, editUserApi } from "../apis/LoginApi";
 import SubBottomScreen from "../components/subscriptions/SubBottomScreen";
 import useRevenueCat from "../hooks/useRevenueCat";
+import { clearSession } from "../utils/session";
 
 const AnimatedView = createAnimatableComponent(AnimatableView);
 
@@ -60,6 +61,7 @@ const ProfileScreen = ({}) => {
   const [accountError, setaccountError] = useState(false);
   const [isProMember, setisProMember] = useState(false);
   const [openSubBottomScreen, setopenSubBottomScreen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 2) UseEffects
   useEffect(() => {
@@ -174,8 +176,9 @@ const ProfileScreen = ({}) => {
   };
 
   const LogoutUser = async () => {
-    await AsyncStorage.removeItem("userToken");
-    navigation.navigate("Login");
+    // Clears storage, disconnects the socket, signs out of Firebase/Google
+    // and resets the navigation stack so nothing of this session survives.
+    await clearSession();
   };
 
   const getAvatarSource = (avatarId, profilePicture) => {
@@ -259,15 +262,27 @@ const ProfileScreen = ({}) => {
   };
 
   const DeleteAccount = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
     try {
       let userToken = await AsyncStorage.getItem("userToken");
       const response = await deleteUserApi("apiUrl", userToken);
       const data = await response.json();
       if (data?.resultCode === 0) {
-        LogoutUser();
+        await LogoutUser();
+      } else {
+        Alert.alert(
+          "Η διαγραφή απέτυχε",
+          data?.message || "Δοκιμάστε ξανά σε λίγο."
+        );
       }
     } catch (error) {
-      console.log("Error on deleting : ", error);
+      Alert.alert(
+        "Η διαγραφή απέτυχε",
+        "Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά."
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 

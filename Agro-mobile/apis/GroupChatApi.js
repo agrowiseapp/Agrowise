@@ -10,7 +10,6 @@ export async function getRecentGroupMessagesApi(apiUrl, token, limit = 100) {
   url_request = await returnUrl(url_request);
   let url = url_request + GroupChat_url + Recent_url + `?limit=${limit}`;
 
-  console.log("Fetching recent group messages from:", url);
 
   return await fetch(url, {
     method: "GET",
@@ -28,7 +27,6 @@ export async function getGroupMessagesApi(apiUrl, token, page = 1, limit = 50) {
   url_request = await returnUrl(url_request);
   let url = url_request + GroupChat_url + `?page=${page}&limit=${limit}`;
 
-  console.log("Fetching group messages from:", url);
 
   return await fetch(url, {
     method: "GET",
@@ -46,8 +44,6 @@ export async function sendGroupMessageApi(apiUrl, bodyObject, token) {
   url_request = await returnUrl(url_request);
   let url = url_request + GroupChat_url;
 
-  console.log("Sending group message to:", url);
-  console.log("Message body:", bodyObject);
 
   return await fetch(url, {
     method: "POST",
@@ -66,7 +62,6 @@ export async function deleteGroupMessageApi(apiUrl, messageId, userId, token) {
   url_request = await returnUrl(url_request);
   let url = url_request + GroupChat_url + "/" + messageId;
 
-  console.log("Deleting group message:", url);
 
   return await fetch(url, {
     method: "DELETE",
@@ -85,8 +80,6 @@ export async function reportGroupMessageApi(apiUrl, reportData, token) {
   url_request = await returnUrl(url_request);
   let url = url_request + GroupChat_url + "/report";
 
-  console.log("Reporting group message:", url);
-  console.log("Report data:", reportData);
 
   return await fetch(url, {
     method: "POST",

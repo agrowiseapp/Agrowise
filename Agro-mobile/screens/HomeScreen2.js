@@ -16,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import SimpleIcons from "../components/icons/SimpleIcons";
 import AsyncStorage from "../utils/AsyncStorage";
 import colors from "../assets/Theme/colors";
+import ShareAppCard from "../components/home/ShareAppCard";
 
 const AnimatedView = createAnimatableComponent(AnimatableView);
 const AnimatedText = createAnimatableComponent(AnimatableText);
@@ -389,6 +390,9 @@ const HomeScreen2 = ({ route }) => {
                 />
               </View>
             </TouchableOpacity>
+
+            {/* Recommend the app */}
+            <ShareAppCard />
           </ScrollView>
         </View>
 

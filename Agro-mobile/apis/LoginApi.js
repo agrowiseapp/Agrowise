@@ -9,22 +9,8 @@ const LoginWithGoogle_url = "/user/loginWithGoogle";
 
 //Login Api
 export async function loginUserApi(apiUrl, bodyObject) {
-  console.log(`🔐 loginUserApi called with apiUrl: "${apiUrl}"`);
-
-  let url_request = apiUrl;
-  let url; // ✅ Declare 'url' here
-  console.log(`🔄 About to call returnUrl with: "${url_request}"`);
-
-  try {
-    url_request = await returnUrl(url_request);
-    console.log(`✅ returnUrl returned: "${url_request}"`);
-
-    url = url_request + Login_url;
-    console.log(`🎯 Final LOGIN url: "${url}"`);
-  } catch (error) {
-    console.error(`❌ Error in loginUserApi URL construction:`, error);
-    throw error;
-  }
+  const url_request = await returnUrl(apiUrl);
+  const url = url_request + Login_url;
 
   return await fetch(url, {
     method: "POST",
@@ -81,9 +67,6 @@ export async function deleteUserApi(apiUrl, token) {
   url_request = await returnUrl(url_request);
   let url = url_request + DeleteUser_url;
 
-  //console.log("Token Send :", token);
-  console.log("url :", url);
-
   return await fetch(url, {
     method: "DELETE",
     headers: {
@@ -119,9 +102,6 @@ export async function googleLoginApi(apiUrl, bodyObject) {
   let url_request = apiUrl;
   url_request = await returnUrl(url_request);
   let url = url_request + LoginWithGoogle_url;
-
-  console.log("Object :", bodyObject);
-  console.log("url :", url);
 
   return await fetch(url, {
     method: "POST",

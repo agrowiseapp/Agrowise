@@ -71,7 +71,6 @@ const checkForBadWordsAndAlert = (text) => {
     "Μαλάκας",
   ];
 
-  console.log("Text i am filtering : ", text);
   const lowercasedText = text.toLowerCase(); // Convert input text to lowercase
   const lowercasedBadWordsList = badWordsList.map((word) => word.toLowerCase());
 

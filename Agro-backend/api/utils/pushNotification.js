@@ -46,7 +46,28 @@ const path = require("path");
 const { google } = require("googleapis");
 const { JWT } = google.auth;
 
-const sendPushNotification = async (deviceToken, title, body, deviceType) => {
+/**
+ * @param {string} deviceToken
+ * @param {string} title
+ * @param {string} body
+ * @param {number} deviceType 1 = Android, 2 = iOS
+ * @param {object} [data] Extra payload delivered to the app. The mobile app
+ *        reads `data.type` to decide which screen a tap should open
+ *        ("chat" | "groupchat" | "comment"). FCM requires every value to be a
+ *        string, so everything is coerced below.
+ */
+const sendPushNotification = async (
+  deviceToken,
+  title,
+  body,
+  deviceType,
+  data = {}
+) => {
+  // FCM v1 rejects non-string data values.
+  const stringData = Object.fromEntries(
+    Object.entries(data || {}).map(([key, value]) => [key, String(value)])
+  );
+
   //OLD WITHOUT PUSH V2
   // if (deviceType === 1) {
   //   // Android device - Use FCM
@@ -94,6 +115,7 @@ const sendPushNotification = async (deviceToken, title, body, deviceType) => {
           title: title,
           body: body,
         },
+        data: stringData,
         android: {
           notification: {
             sound: "default",
@@ -140,8 +162,10 @@ const sendPushNotification = async (deviceToken, title, body, deviceType) => {
             title: title,
             body: body,
           },
+          sound: "default",
         },
-        // Add other relevant data for iOS push notification payload if needed
+        // Custom top-level keys are delivered to the app as notification data.
+        ...stringData,
       })
     );
 

@@ -13,18 +13,15 @@ class AsyncStorageWrapper {
    * @returns {Promise<string|null>}
    */
   static async getItem(key) {
-    console.log(`🔍 AsyncStorage.getItem called with key: "${key}"`);
     try {
-      const value = await SecureStore.getItemAsync(key);
-      console.log(`✅ AsyncStorage.getItem success for "${key}":`, value ? `"${value.substring(0, 100)}..."` : 'null');
-      return value;
+      return await SecureStore.getItemAsync(key);
     } catch (error) {
       // SecureStore throws error for missing keys, AsyncStorage returns null
       if (error.message?.includes('not found') || error.message?.includes('No such key')) {
-        console.log(`ℹ️ AsyncStorage.getItem key "${key}" not found, returning null`);
         return null;
       }
-      console.error(`❌ AsyncStorage.getItem error for "${key}":`, error);
+      // Never log the value itself - these keys hold tokens and credentials.
+      console.error(`AsyncStorage.getItem failed for "${key}"`);
       return null;
     }
   }
@@ -36,14 +33,13 @@ class AsyncStorageWrapper {
    * @returns {Promise<void>}
    */
   static async setItem(key, value) {
-    console.log(`💾 AsyncStorage.setItem called with key: "${key}", value:`, typeof value === 'string' ? `"${value.substring(0, 100)}..."` : value);
     try {
       // Ensure value is a string
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
       await SecureStore.setItemAsync(key, stringValue);
-      console.log(`✅ AsyncStorage.setItem success for "${key}"`);
     } catch (error) {
-      console.error(`❌ AsyncStorage.setItem error for "${key}":`, error);
+      // Never log the value itself - these keys hold tokens and credentials.
+      console.error(`AsyncStorage.setItem failed for "${key}"`);
       throw error;
     }
   }

@@ -26,7 +26,7 @@ import { getSettingsApi } from "../apis/SettingsApi";
 import SimpleIcons from "../components/icons/SimpleIcons";
 import TermsAndPolicy from "../components/policy/TermsAndPolicy";
 import LoginProblem from "../components/login/LoginProblem";
-import useRevenueCat from "../hooks/useRevenueCat";
+import useRevenueCat, { isProCustomer } from "../hooks/useRevenueCat";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import useGoogleAuthOfficial from "../hooks/useGoogleAuthOfficial";
 import useFirebaseAuth from "../hooks/useFirebaseAuth";
@@ -70,8 +70,7 @@ const LoginScreen = () => {
           },
         }
       );
-      const userInfo = await response.json();
-      console.log("User Info:", userInfo);
+      await response.json();
     } catch (error) {
       console.error("Error fetching user info:", error);
     }
@@ -180,8 +179,6 @@ const LoginScreen = () => {
         deviceToken: devToken,
         device: device,
       };
-
-      console.log("BodyObject :", bodyObject);
 
       const response = await loginUserApi("apiUrl", bodyObject);
       const data = await response.json();
@@ -349,13 +346,9 @@ const LoginScreen = () => {
           device: device,
         };
 
-        console.log("🔄 Authenticating with backend...", bodyObject);
-
         // Call backend Google login API
         const response = await googleLoginApi("apiUrl", bodyObject);
         const data = await response.json();
-
-        console.log("📋 Backend response:", data);
 
         if (data.resultCode === 0) {
           // Backend authentication successful
@@ -469,13 +462,9 @@ const LoginScreen = () => {
           device: device,
         };
 
-        console.log("🔄 Authenticating with backend...", bodyObject);
-
         // Call backend Google login API
         const response = await googleLoginApi("apiUrl", bodyObject);
         const data = await response.json();
-
-        console.log("📋 Backend response:", data);
 
         if (data.resultCode === 0) {
           // Backend authentication successful
@@ -570,8 +559,6 @@ const LoginScreen = () => {
         let user = data?.response;
         AsyncStorage.setItem("userInfo", JSON.stringify(user));
 
-        console.log("User Info Chat Id: ", user.chatId);
-
         if (user.chatId !== undefined) {
           AsyncStorage.setItem("chatId", user.chatId);
         } else {
@@ -624,24 +611,11 @@ const LoginScreen = () => {
           return { success: true, isProMember: true, usedFallback: false };
         }
 
-        console.log("🔄 Fetching fresh RevenueCat subscription status...");
         const Purchases = require("react-native-purchases").default;
         const freshCustomerInfo = await Purchases.getCustomerInfo();
 
-        const freshIsProMember =
-          freshCustomerInfo.activeSubscriptions.includes("month_subscription") ||
-          freshCustomerInfo.activeSubscriptions.includes("year_sub:1-year-sub-plan");
-
-        console.log("✅ Fresh RevenueCat status:", freshIsProMember);
-        console.log("📊 Active subscriptions:", freshCustomerInfo.activeSubscriptions);
-
-        // Log if there's a mismatch (race condition detected)
-        if (hookIsProMember !== freshIsProMember) {
-          console.warn("⚠️ SUBSCRIPTION STATUS MISMATCH DETECTED!");
-          console.warn("  Hook said:", hookIsProMember);
-          console.warn("  Fresh check says:", freshIsProMember);
-          console.warn("  → Using fresh check as source of truth");
-        }
+        // Single shared definition of "is pro" - see hooks/useRevenueCat.
+        const freshIsProMember = isProCustomer(freshCustomerInfo);
 
         return { success: true, isProMember: freshIsProMember };
       } catch (error) {

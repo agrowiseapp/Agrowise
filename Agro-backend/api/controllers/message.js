@@ -54,7 +54,8 @@ exports.send_message = async (req, res, next) => {
             user.deviceToken,
             notificationTitle,
             notificationBody,
-            user.device
+            user.device,
+            { type: "chat", chatId: chatId }
           );
           console.log("✅ Push notification sent successfully");
         } catch (notificationError) {

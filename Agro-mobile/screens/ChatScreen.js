@@ -22,10 +22,11 @@ import ChatComponent from "../components/chat/ChatComponent";
 import { useNavigation } from "@react-navigation/native";
 import { UserInfoApi } from "../apis/LoginApi";
 import SubBottomScreen from "../components/subscriptions/SubBottomScreen";
-import useRevenueCat from "../hooks/useRevenueCat";
+import { isProCustomer } from "../hooks/useRevenueCat";
 import socketService from "../services/socketService";
 import { getBootstrapUrl } from "../apis/settings/bootstrapUrl";
 import ChatInputModal from "../components/chat/ChatInputModal";
+import { reportApiFailure } from "../utils/session";
 
 // Get backend URL from existing bootstrap configuration
 const BACKEND_URL = getBootstrapUrl();
@@ -122,14 +123,12 @@ const ChatScreen = ({ route }) => {
       const Purchases = require("react-native-purchases").default;
       const customerInfo = await Purchases.getCustomerInfo();
 
-      const activeSubscriptions = customerInfo.activeSubscriptions || [];
-      const freshIsProMember = activeSubscriptions.length > 0;
+      // Single shared definition of "is pro" - see hooks/useRevenueCat.
+      const freshIsProMember = isProCustomer(customerInfo);
 
       // Update AsyncStorage with fresh data
       await AsyncStorage.setItem("ProMembership", freshIsProMember.toString());
       setisProMember(freshIsProMember);
-
-      console.log("✅ Fresh subscription status:", freshIsProMember);
     } catch (error) {
       console.log("Error checking RevenueCat subscription:", error);
       // Fallback to cached value if RevenueCat check fails
@@ -185,11 +184,12 @@ const ChatScreen = ({ route }) => {
       let userToken = await AsyncStorage.getItem("userToken");
       const response = await getSpecificChatApi("apiUrl", chatID, userToken);
       if (response.status >= 400) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        reportApiFailure(response.status);
+        return;
       }
       const data = await response.json();
       if (data?.resultCode === 0) {
-        const newMessages = data.response.messages;
+        const newMessages = data.response?.messages ?? [];
         if (messages.length > 0) {
           const lastMessage = messages[messages.length - 1];
           const newLastMessage = newMessages[newMessages.length - 1];
@@ -201,31 +201,13 @@ const ChatScreen = ({ route }) => {
           setMessages(newMessages);
         }
       } else {
-        console.log("Error :", error);
-        Alert.alert(
-          "Πρόβλημα σύνδεσης.",
-          "Ο Λογαριασμός σας ήταν πολύ ώρα σε αδράνεια. Παρακαλώ συνδεθείτε ξανα.",
-          [
-            {
-              text: "Αποσύνδεση",
-              onPress: () => navigation.navigate("Login"),
-            },
-          ]
-        );
+        // Reachable server that refused the request.
+        reportApiFailure(response.status);
       }
     } catch (error) {
-      console.log("getSpecificChatFunction :", error);
-      clearInterval(intervalRef.current);
-      Alert.alert(
-        "Πρόβλημα σύνδεσης.",
-        "Ο Λογαριασμός σας ήταν πολύ ώρα σε αδράνεια. Παρακαλώ συνδεθείτε ξανα.",
-        [
-          {
-            text: "Αποσύνδεση",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
-      );
+      // No response at all - offline, DNS, timeout. Not an auth problem, so
+      // do not tell the user their account expired.
+      reportApiFailure(undefined);
     }
   };
 
@@ -322,7 +304,9 @@ const ChatScreen = ({ route }) => {
       }
       setLoading(false);
     } catch (error) {
-      console.log("createChatFunction :", error);
+      // Without this the screen was stuck on a spinner forever.
+      setLoading(false);
+      reportApiFailure(undefined);
     }
   };
 

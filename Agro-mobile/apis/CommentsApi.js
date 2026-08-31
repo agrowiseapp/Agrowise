@@ -29,7 +29,6 @@ export async function replyCommentApi(apiUrl, bodyObject, token) {
   url_request = await returnUrl(url_request);
   let url = url_request + ReplyComment_url;
 
-  console.log("BodyObject :", bodyObject);
   //console.log("url :", url);
 
   return await fetch(url, {
@@ -117,8 +116,6 @@ export async function reportReplyApi(apiUrl, bodyObject, token) {
     "/" +
     bodyObject.replyId;
 
-  console.log("Body Send :", bodyObject);
-  console.log("url :", url);
 
   return await fetch(url, {
     method: "PUT",

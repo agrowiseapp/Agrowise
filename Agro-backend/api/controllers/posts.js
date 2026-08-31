@@ -236,7 +236,8 @@ exports.posts_publish_post = (req, res, next) => {
                   deviceToken,
                   notificationTitle,
                   notificationBody,
-                  deviceType
+                  deviceType,
+                  { type: "post" }
                 );
 
                 // Track by platform

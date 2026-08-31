@@ -1,64 +1,108 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import AsyncStorage from "../utils/AsyncStorage";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
-import OnboardScreen from "../screens/OnboardScreen";
 import { useEffect, useState } from "react";
 import SubscriptionScreen from "../screens/SubscriptionScreen";
 import { Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 
-import {
-  createAnimatableComponent,
-  View as AnimatableView,
-} from "react-native-animatable";
 import HomeScreen2 from "../screens/HomeScreen2";
 import NewsScreen from "../screens/NewsScreen";
 import ChatScreen from "../screens/ChatScreen";
 import GroupChatScreen from "../screens/GroupChatScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import colors from "../assets/Theme/colors";
+import { UserInfoApi } from "../apis/LoginApi";
+import { clearSession } from "../utils/session";
 
 const Stack = createNativeStackNavigator();
-const AnimatedView = createAnimatableComponent(AnimatableView);
+// Created once at module level. Building it inside the component would make a
+// brand-new navigator on every render and reset all five tabs.
 const Tab = createBottomTabNavigator();
 
 export const AuthStack = () => {
-  // 1) Data
-  const [isFirstLaunch, setisFirstLaunch] = useState(false);
+  // null = still deciding, "Login" | "Main" = decided
+  const [initialRoute, setInitialRoute] = useState(null);
 
-  // 2) Use Effects
   useEffect(() => {
-    isFirstLaunchFucntion();
+    let cancelled = false;
 
-    return;
+    const restoreSession = async () => {
+      const token = await AsyncStorage.getItem("userToken");
+
+      // No stored session - normal login.
+      if (!token) return "Login";
+
+      try {
+        const response = await UserInfoApi("apiUrl", token);
+
+        // The server explicitly rejected the token: it is dead, not slow.
+        if (response.status === 401 || response.status === 403) {
+          await clearSession({ redirect: false });
+          return "Login";
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.resultCode === 0 && data?.response) {
+            // Refresh the cached profile while we are here.
+            await AsyncStorage.setItem(
+              "userInfo",
+              JSON.stringify(data.response)
+            ).catch(() => {});
+            if (data.response.chatId !== undefined) {
+              await AsyncStorage.setItem(
+                "chatId",
+                data.response.chatId
+              ).catch(() => {});
+            }
+            return "Main";
+          }
+          // Reachable server, but it will not accept this token.
+          await clearSession({ redirect: false });
+          return "Login";
+        }
+
+        // 5xx or anything else server-side: not the user's fault, and not
+        // proof the token is bad. Let them in on cached data.
+        return "Main";
+      } catch (error) {
+        // Offline / DNS / timeout. Do NOT log the user out for a bad network.
+        return "Main";
+      }
+    };
+
+    restoreSession()
+      .then((route) => {
+        if (!cancelled) setInitialRoute(route);
+      })
+      .catch(() => {
+        if (!cancelled) setInitialRoute("Login");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // 3) Functions
-  const isFirstLaunchFucntion = () => {
-    AsyncStorage.getItem("alreadyLaunched").then((value) => {
-      if (value !== null) {
-        AsyncStorage.setItem("alreadyLaunched", true);
-        setisFirstLaunch(true); // Fixed: was setIsLoading(true)
-      } else {
-        setisFirstLaunch(false);
-      }
-    });
-  };
+  if (initialRoute === null) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color={colors.Main[500]} />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator
+      initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
       }}
     >
-      {/* Onboarding screen removed from showing - commented out below */}
-      {/* {!isFirstLaunch && (
-        <Stack.Screen name="Onboard" component={OnboardScreen} />
-      )} */}
-
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Main" component={AppStack} />
@@ -75,8 +119,6 @@ export const AuthStack = () => {
 };
 
 const AppStack = () => {
-  const Tab = createBottomTabNavigator();
-
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -109,10 +151,7 @@ const AppStack = () => {
         tabBarInactiveTintColor: colors.Second[300],
         tabBarShowLabel: false,
         tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          //height: 100,
-          // backgroundColor: colors.Main[100],
-        },
+        tabBarStyle: {},
         headerShown: false,
       })}
     >
@@ -124,3 +163,12 @@ const AppStack = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+  },
+});

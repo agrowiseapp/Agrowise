@@ -17,66 +17,75 @@ import Purchases from "react-native-purchases";
 import TermsAndPolicy from "../policy/TermsAndPolicy";
 import AsyncStorage from "../../utils/AsyncStorage";
 import SimpleIcons from "../icons/SimpleIcons";
+import { isProCustomer } from "../../hooks/useRevenueCat";
 
-const Subscription = ({ currentOffering, setTrialPeriod }) => {
+const Subscription = ({
+  currentOffering,
+  setTrialPeriod,
+  restorePurchases,
+  onPurchaseComplete,
+}) => {
   const [isLoading, setLoading] = useState(false);
+  const [isRestoring, setRestoring] = useState(false);
   const [isChecked, setChecked] = useState(false);
   const [overlayShow, setoverlayShow] = useState(false);
 
-  const handleMonthlyPurchase = async () => {
-    if (!currentOffering?.monthly) return;
+  const runPurchase = async (packageToBuy) => {
+    if (!packageToBuy || isLoading) return;
 
     try {
-      // Show optimistic UI update while waiting for server response
       setLoading(true);
+      const purchaserInfo = await Purchases.purchasePackage(packageToBuy);
 
-      const purchaserInfo = await Purchases.purchasePackage(
-        currentOffering.monthly
-      );
+      // Do NOT test a hardcoded entitlement name here. purchasePackage only
+      // resolves when the store confirmed the purchase; the shared
+      // isProCustomer() check decides access.
+      await onPurchaseComplete?.(purchaserInfo.customerInfo);
 
-      console.log("purchaser info : ", purchaserInfo);
-
-      setLoading(false);
-
-      if (purchaserInfo.customerInfo.entitlements.active.Pro) {
-        freshStartWithMembership();
+      if (!isProCustomer(purchaserInfo.customerInfo)) {
+        Alert.alert(
+          "Η αγορά ολοκληρώθηκε",
+          "Η συνδρομή σας ενεργοποιείται. Αν δεν ξεκλειδώσει άμεσα, πατήστε «Επαναφορά αγορών»."
+        );
+      } else {
+        await clearGuestFlag();
       }
     } catch (error) {
-      setLoading(false);
-      console.error("Error during purchase:", error);
-      if (!error.userCancelled) {
-        console.log("Error without user cancel");
+      if (!error?.userCancelled) {
+        Alert.alert(
+          "Η αγορά δεν ολοκληρώθηκε",
+          "Δεν χρεωθήκατε. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά."
+        );
       }
-      // Handle any errors that might occur during the purchase process
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAnnualPurchase = async () => {
-    if (!currentOffering?.annual) return;
+  const handleMonthlyPurchase = () => runPurchase(currentOffering?.monthly);
+  const handleAnnualPurchase = () => runPurchase(currentOffering?.annual);
 
+  // Required by App Store guideline 3.1.1 for auto-renewing subscriptions.
+  const handleRestore = async () => {
+    if (isRestoring) return;
+    setRestoring(true);
     try {
-      // Show optimistic UI update while waiting for server response
-      setLoading(true);
-
-      const purchaserInfo = await Purchases.purchasePackage(
-        currentOffering.annual
-      );
-
-      console.log("purchaser info : ", purchaserInfo);
-
-      setLoading(false);
-
-      if (purchaserInfo.customerInfo.entitlements.active.Pro) {
-        freshStartWithMembership();
+      const result = await restorePurchases?.();
+      if (result?.isPro) {
+        await clearGuestFlag();
+      } else if (result?.success) {
+        Alert.alert(
+          "Δεν βρέθηκε συνδρομή",
+          "Δεν βρέθηκε ενεργή συνδρομή σε αυτόν τον λογαριασμό."
+        );
+      } else {
+        Alert.alert(
+          "Η επαναφορά απέτυχε",
+          "Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά."
+        );
       }
-    } catch (error) {
-      setLoading(false);
-      console.log("Error during purchase : ", JSON.stringify(error));
-
-      if (!error.userCancelled) {
-        //showError(error);
-      }
-      // Handle any errors that might occur during the purchase process
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -106,11 +115,11 @@ const Subscription = ({ currentOffering, setTrialPeriod }) => {
     );
   };
 
-  const freshStartWithMembership = async () => {
-    console.log("IS PRO");
-    await AsyncStorage.removeItem("userToken");
-    await AsyncStorage.removeItem("ProMembership");
-    AsyncStorage.removeItem("trialPeriod");
+  // Once the user is a paying member the guest flag is meaningless.
+  // NOTE: this must never touch "userToken" - deleting it used to log the
+  // buyer out of the backend immediately after they paid.
+  const clearGuestFlag = async () => {
+    await AsyncStorage.removeItem("trialPeriod").catch(() => {});
   };
 
   return (
@@ -221,6 +230,19 @@ const Subscription = ({ currentOffering, setTrialPeriod }) => {
                 )}
               </View>
             )}
+
+            {/* Restore Purchases - required by App Store guideline 3.1.1 */}
+            <TouchableOpacity
+              onPress={handleRestore}
+              style={styles.restoreButton}
+              disabled={isRestoring}
+            >
+              {isRestoring ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.restoreButtonText}>Επαναφορά αγορών</Text>
+              )}
+            </TouchableOpacity>
 
             {/* Compact Guest Access */}
             <TouchableOpacity
@@ -412,6 +434,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 8,
     fontWeight: '500',
+  },
+  restoreButton: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  restoreButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
+    textDecorationLine: 'underline',
   },
   compactGuestButton: {
     backgroundColor: colors.Main[800],

@@ -3,61 +3,48 @@ import {
   getCachedConfig,
   setCachedConfig,
   isConfigLoaded,
-  getConfigPromise,
 } from "./bootstrapUrl";
 import { loadAppConfiguration } from "../ConfigApi";
 
 let configPromise = null;
 
-export const returnUrl = async (url) => {
-  console.log(`🌐 returnUrl called with: "${url}"`);
+const resolvedBaseUrl = () => {
+  const config = getCachedConfig();
+  return config?.apiBaseUrl || getBootstrapUrl();
+};
 
-  // If we already have a cached URL, use it
+export const returnUrl = async () => {
+  // Already resolved once this session.
   if (isConfigLoaded()) {
-    const config = getCachedConfig();
-    const result = config?.apiBaseUrl || getBootstrapUrl();
-    console.log(`✅ returnUrl using cached config:`, result);
-    return result;
+    return resolvedBaseUrl();
   }
 
-  // If we're already loading config, wait for it
+  // A load is already in flight - wait for that one instead of starting another.
   if (configPromise) {
-    console.log(`⏳ returnUrl waiting for existing config promise...`);
     await configPromise;
-    const config = getCachedConfig();
-    const result = config?.apiBaseUrl || getBootstrapUrl();
-    console.log(`✅ returnUrl after waiting for promise:`, result);
-    return result;
+    return resolvedBaseUrl();
   }
 
-  // If this is the first call, get the URL from backend
-  if (url === "apiUrl") {
-    console.log(`🔄 returnUrl loading new configuration...`);
-    configPromise = loadConfiguration();
-    await configPromise;
-    const config = getCachedConfig();
-    const result = config?.apiBaseUrl || getBootstrapUrl();
-    console.log(`✅ returnUrl after loading config:`, result);
-    return result;
-  }
-
-  console.log(`↩️ returnUrl returning original url: "${url}"`);
-  return url;
+  // First call of the session: resolve the base URL.
+  // NOTE: the argument is ignored on purpose. Callers historically passed
+  // either "apiUrl" or "url"; anything other than "apiUrl" used to fall
+  // through and return that literal string as the base URL, which broke the
+  // notification-badge calls.
+  configPromise = loadConfiguration();
+  await configPromise;
+  return resolvedBaseUrl();
 };
 
 const loadConfiguration = async () => {
   try {
-    console.log("Loading app configuration...");
     const config = await loadAppConfiguration();
     setCachedConfig(config);
-    console.log("App configuration loaded successfully");
   } catch (error) {
-    console.log("Error loading app configuration:", error);
-    // Set fallback config
+    console.log("Config load failed, using fallback base url");
     const fallbackConfig = {
       apiBaseUrl: getBootstrapUrl(),
       imageBaseUrl: "https://i.ibb.co",
-      version: "1.1.4",
+      version: "1.1.6",
       features: {
         chatEnabled: true,
         notificationsEnabled: true,
@@ -69,7 +56,8 @@ const loadConfiguration = async () => {
 
 // Export function to manually reload configuration
 export const reloadConfiguration = async () => {
-  configPromise = null;
   setCachedConfig(null);
-  return loadConfiguration();
+  configPromise = loadConfiguration();
+  await configPromise;
+  return resolvedBaseUrl();
 };

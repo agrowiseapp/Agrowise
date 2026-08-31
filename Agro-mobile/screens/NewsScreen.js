@@ -21,7 +21,8 @@ import { CheckBox } from "@rneui/themed";
 import TrialPosts from "../components/news/TrialPosts";
 import useRevenueCat from "../hooks/useRevenueCat";
 import CheckIsPro from "../components/utils/CheckIsPro";
-import { getPostsApi } from "../apis/PostsApi";
+import { getPostsApi, getPostsWithUserCommentsApi } from "../apis/PostsApi";
+import { reportApiFailure } from "../utils/session";
 
 const NewsScreen = ({ route }) => {
   // 1) Data
@@ -173,7 +174,9 @@ const NewsScreen = ({ route }) => {
       const response = await getPostsApi("apiUrl", userToken);
 
       if (response.status >= 400) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        reportApiFailure(response.status);
+        setLoading(false);
+        return;
       }
 
       const data = await response.json();
@@ -181,31 +184,20 @@ const NewsScreen = ({ route }) => {
       setposts((prevPosts) => data?.data);
 
       if (filter === 2) {
-        const filteredData = data?.data.filter(
+        const filteredData = (data?.data ?? []).filter(
           (post) => post.unreadComments > 0
         );
         setfilteredPosts(filteredData);
       } else {
-        setfilteredPosts(data?.data);
+        setfilteredPosts(data?.data ?? []);
       }
 
       setshowFilters(false);
       setLoading(false);
     } catch (error) {
-      console.log("Error :", error);
-
-      Alert.alert(
-        "Πρόβλημα σύνδεσης.",
-        "Ο Λογαριασμός σας ήταν πολύ ώρα σε αδράνεια. Παρακαλώ συνδεθείτε ξανα.",
-        [
-          {
-            text: "Αποσύνδεση",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
-      );
-
-      await setLoading(false);
+      // No response at all - offline, DNS, timeout. Not an auth problem.
+      reportApiFailure(undefined);
+      setLoading(false);
     }
   };
 
@@ -216,28 +208,25 @@ const NewsScreen = ({ route }) => {
       settoken(userToken);
 
       const response = await getPostsApi("apiUrl", userToken);
+
+      if (response.status >= 400) {
+        reportApiFailure(response.status);
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
 
-      const filteredData = data?.data.filter((post) => post.unreadComments > 0);
+      const filteredData = (data?.data ?? []).filter(
+        (post) => post.unreadComments > 0
+      );
       setfilteredPosts(filteredData);
 
       setshowFilters(false);
       setLoading(false);
     } catch (error) {
-      console.log("Error :", error);
-
-      Alert.alert(
-        "Πρόβλημα σύνδεσης.",
-        "Ο Λογαριασμός σας ήταν πολύ ώρα σε αδράνεια. Παρακαλώ συνδεθείτε ξανα.",
-        [
-          {
-            text: "Αποσύνδεση",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
-      );
-
-      await setLoading(false);
+      reportApiFailure(undefined);
+      setLoading(false);
     }
   };
 

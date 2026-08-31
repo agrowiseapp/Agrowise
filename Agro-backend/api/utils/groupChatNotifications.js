@@ -71,7 +71,8 @@ const sendGroupChatNotifications = async (messageText, messageId, authorId, auth
           recipient.deviceToken,
           notificationTitle,
           notificationBody,
-          recipient.device
+          recipient.device,
+          { type: "groupchat" }
         );
         sentCount++;
       } catch (error) {

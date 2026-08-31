@@ -172,6 +172,15 @@ const SimpleIcons = ({ name, size = 24, color = "black", style }) => {
       case "google":
         return null; // Will be handled separately
 
+      // Store / platform logos
+      case "apple":
+      case "ios":
+        return "logo-apple";
+
+      case "playstore":
+      case "android":
+        return "logo-google-playstore";
+
       // Checkbox icons
       case "checkbox-blank-outline":
         return "square-outline";
