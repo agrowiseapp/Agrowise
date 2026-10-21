@@ -12,7 +12,7 @@ import colors from "../../assets/Theme/colors";
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, errorText: "" };
   }
 
   static getDerivedStateFromError() {
@@ -22,10 +22,11 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, info) {
     // Kept intentionally minimal - no crash reporter is wired up.
     console.log("Unhandled UI error:", error?.message, info?.componentStack);
+    this.setState({ errorText: String(error?.message ?? error) });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false });
+    this.setState({ hasError: false, errorText: "" });
   };
 
   render() {
@@ -39,6 +40,11 @@ class ErrorBoundary extends React.Component {
         <Text style={styles.message}>
           Παρουσιάστηκε ένα απρόσμενο πρόβλημα. Δοκιμάστε ξανά.
         </Text>
+        {!!this.state.errorText && (
+          <Text style={styles.errorText} selectable>
+            {this.state.errorText}
+          </Text>
+        )}
         <TouchableOpacity style={styles.button} onPress={this.handleReset}>
           <Text style={styles.buttonText}>Δοκιμάστε ξανά</Text>
         </TouchableOpacity>
@@ -68,6 +74,13 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     textAlign: "center",
     lineHeight: 22,
+    marginBottom: 24,
+  },
+  errorText: {
+    fontSize: 12,
+    color: "white",
+    opacity: 0.6,
+    textAlign: "center",
     marginBottom: 24,
   },
   button: {
